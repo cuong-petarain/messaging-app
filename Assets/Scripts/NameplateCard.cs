@@ -9,19 +9,13 @@ public class NameplateCard : MonoBehaviour
     public TMP_Text textDisplayName;
     public GameObject representMessagingComponents;
 
-    public string thisUserId;
+    public string thisChannelId;
 
-    public async void Populate(string userId, GameObject messagingComponents)
+    public void Populate(string userDisplayName, GameObject messagingComponents)
     {
-        thisUserId = userId;
-        var users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, new string[] { userId });
-        var usersList = users.Users.ToList();
-        if (usersList.Count > 0)
-        {
-            textDisplayName.text = usersList[0].DisplayName;
-            textDisplayName.color = Color.black;
-            representMessagingComponents = messagingComponents;
-        }
+        textDisplayName.text = userDisplayName;
+        textDisplayName.color = Color.black;
+        representMessagingComponents = messagingComponents;
     }
 
     public void ToggleComponents(bool toggle)

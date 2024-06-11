@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 public class ClientObject : MonoBehaviour
 {
+    public PanelMessage panelMessage;
+
     private static ClientObject instance;
     public static ClientObject Instance => instance;
 
@@ -39,44 +41,32 @@ public class ClientObject : MonoBehaviour
     private void OnDisable()
     {
         UserAccount.OnUpdateAccountInfoButtonPressed -= UpdateAccountInfo;
-        socket.ReceivedNotification -= PanelMessage.Instance.HandleNotification;
+        socket.ReceivedNotification -= panelMessage.HandleNotification;
     }
 
     // Start is called before the first frame update
-    private async void Start()
+    private void Start()
     {
-        await Connect();
-        var account = await client.GetAccountAsync(session);
-        thisUserId = account.User.Id;
-        OnClientConnected?.Invoke(account);
+        Connect();
     }
 
-    private async Task Connect()
+    private async void Connect()
     {
         // client
         client = new Client("http", "127.0.0.1", 7350, "defaultkey");
         client.Timeout = 10;
         var logger = new UnityLogger();
         client.Logger = logger;
+        
         // session
-        //deviceId = SystemInfo.deviceUniqueIdentifier;
-        //if (deviceId == SystemInfo.unsupportedIdentifier)
-        //    deviceId = System.Guid.NewGuid().ToString();
         deviceId = Application.companyName + Application.productName;
-        Dictionary<string, string> vars = new Dictionary<string, string>();
-        vars["DeviceOS"] = SystemInfo.operatingSystem;
-        vars["DeviceModel"] = SystemInfo.deviceModel;
-        vars["GameVersion"] = Application.version;
-        session = await client.AuthenticateDeviceAsync(deviceId, null, true, vars);
-        PlayerPrefs.SetString("deviceId", deviceId);
-        PlayerPrefs.SetString("nakama.authToken", session.AuthToken);
-        PlayerPrefs.SetString("nakama.refreshToken", session.RefreshToken);
+        session = await client.AuthenticateDeviceAsync(deviceId);
 
         // socket
         bool appearOnline = true;
         int connectionTimeout = 30;
         socket = client.NewSocket();
-        socket.ReceivedNotification += PanelMessage.Instance.HandleNotification;
+        socket.ReceivedNotification += panelMessage.HandleNotification;
         await socket.ConnectAsync(session, appearOnline, connectionTimeout);
     }
 
@@ -88,26 +78,5 @@ public class ClientObject : MonoBehaviour
     private async void UpdateAccountInfo(string username, string name)
     {
         await client.UpdateAccountAsync(session, username, name);
-    }
-
-    private async void CheckSessionExpiration()
-    {
-        // Check whether a session has expired or is close to expiry.
-        if (session.IsExpired || session.HasExpired(DateTime.UtcNow.AddDays(1)))
-        {
-            try
-            {
-                // Attempt to refresh the existing session.
-                session = await client.SessionRefreshAsync(session);
-            }
-            catch (ApiResponseException)
-            {
-                // Couldn't refresh the session so reauthenticate.
-                session = await client.AuthenticateDeviceAsync(deviceId);
-                PlayerPrefs.SetString("nakama.refreshToken", session.RefreshToken);
-            }
-
-            PlayerPrefs.SetString("nakama.authToken", session.AuthToken);
-        }
     }
 }

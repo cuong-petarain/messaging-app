@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using System;
+using System.Threading.Tasks;
 
 public class UserAccount : MonoBehaviour
 {
@@ -13,14 +14,15 @@ public class UserAccount : MonoBehaviour
 
     public static Action<string, string> OnUpdateAccountInfoButtonPressed;
 
-    private void OnEnable()
+    private async void Start()
     {
-        ClientObject.OnClientConnected += GetUserProfile;
-    }
-
-    private void OnDisable()
-    {
-        ClientObject.OnClientConnected -= GetUserProfile;
+        while (ClientObject.Instance.Socket == null || !ClientObject.Instance.Socket.IsConnected)
+        {
+            await Task.Yield();
+        }
+        var account = await ClientObject.Instance.Client.GetAccountAsync(ClientObject.Instance.Session);
+        ClientObject.Instance.thisUserId = account.User.Id;
+        GetUserProfile(account);
     }
 
     private void GetUserProfile(IApiAccount accountInfo)
