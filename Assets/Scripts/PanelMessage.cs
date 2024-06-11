@@ -6,13 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Playables;
+using Nakama.TinyJson;
+using PimDeWitte.UnityMainThreadDispatcher;
 
 public class PanelMessage : MonoBehaviour
 {
-    private static PanelMessage instance;
-    public static PanelMessage Instance => instance;
-
     [Header("UI")]
     [SerializeField] private Transform _activeChatsPanel;
 
@@ -20,35 +18,40 @@ public class PanelMessage : MonoBehaviour
     [SerializeField] private NameplateCard _nameplateCardPrefab;
     [SerializeField] private GameObject _messagingComponentsPrefab;
 
-    private List<NameplateCard> _chattingUsers = new List<NameplateCard>();
+    private List<NameplateCard> _chattingChannels = new List<NameplateCard>();
+    private string _activeChannelId;
 
     public static Action<string> OnSentInviteDirectMessage;
-
-    private void Awake()
-    {
-        if (instance == null)
-            instance = this;
-    }
+    public static Action<string> OnMessageSubmitted;
 
     private void OnEnable()
     {
         OnSentInviteDirectMessage += InviteDirectMessage;
+        OnMessageSubmitted += SendMessageToActiveChannel;
     }
 
     private void OnDisable()
     {
         OnSentInviteDirectMessage -= InviteDirectMessage;
+        OnMessageSubmitted -= SendMessageToActiveChannel;
     }
 
     private async void InviteDirectMessage(string toUserId)
     {
-        if (_chattingUsers.FirstOrDefault(u => u.thisUserId == toUserId) == null)
+        if (_chattingChannels.FirstOrDefault(u => u.thisChannelId == toUserId) == null)
         {
             ActivateChat(toUserId);
             bool persistence = true;
             bool hidden = false;
             var channel = await ClientObject.Instance.Socket.JoinChatAsync(toUserId, Nakama.ChannelType.DirectMessage, persistence, hidden);
-            CreateNewChat(toUserId);
+            _activeChannelId = channel.Id;
+
+            var users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, new string[] { toUserId });
+            var usersList = users.Users.ToList();
+            if (usersList.Count > 0)
+            {
+                StartCoroutine(CreateNewChat(usersList[0].DisplayName));
+            }
         }
         else
         {
@@ -56,20 +59,28 @@ public class PanelMessage : MonoBehaviour
         }
     }
 
-    private void CreateNewChat(string userId)
+    private IEnumerator CreateNewChat(string toUserDisplayName)
     {
-        NameplateCard nameplate = Instantiate(_nameplateCardPrefab, _activeChatsPanel);
-        GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
-        nameplate.Populate(userId, messagingComponents);
+        try
+        {
+            NameplateCard nameplate = Instantiate(_nameplateCardPrefab, _activeChatsPanel);
+            GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
+            nameplate.Populate(toUserDisplayName, messagingComponents);
 
-        _chattingUsers.Add(nameplate);
+            _chattingChannels.Add(nameplate);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogException(ex);
+        }
+        yield return null;
     }
 
     private void ActivateChat(string userId)
     {
-        foreach (var chat in _chattingUsers)
+        foreach (var chat in _chattingChannels)
         {
-            if (chat.thisUserId == userId)
+            if (chat.thisChannelId.Contains(userId) && chat.thisChannelId.Contains(ClientObject.Instance.thisUserId))
             {
                 chat.ToggleComponents(true);
             }
@@ -90,16 +101,29 @@ public class PanelMessage : MonoBehaviour
 
     private async void AcceptDirectMessage(string requestorUserId)
     {
-        if (_chattingUsers.FirstOrDefault(u => u.thisUserId == requestorUserId) == null)
+        if (_chattingChannels.FirstOrDefault(u => u.thisChannelId == requestorUserId) == null)
         {
             bool persistence = true;
             bool hidden = false;
             var channel = await ClientObject.Instance.Socket.JoinChatAsync(requestorUserId, Nakama.ChannelType.DirectMessage, persistence, hidden);
-            CreateNewChat(requestorUserId);
+            _activeChannelId = channel.Id;
+
+            var users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, new string[] { requestorUserId });
+            var usersList = users.Users.ToList();
+            if (usersList.Count > 0)
+            {
+                UnityMainThreadDispatcher.Instance().Enqueue(CreateNewChat(usersList[0].DisplayName));
+            }
         }
         else
         {
             ActivateChat(requestorUserId);
         }
+    }
+
+    private void SendMessageToActiveChannel(string message)
+    {
+        var messageContent = new Dictionary<string, string> { { "message", message } };
+        _ = ClientObject.Instance.Socket.WriteChatMessageAsync(_activeChannelId, messageContent.ToJson());
     }
 }
