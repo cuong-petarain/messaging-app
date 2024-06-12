@@ -23,6 +23,8 @@ public class NameplateCard : MonoBehaviour
         textDisplayName.color = Color.black;
         representMessagingComponents = messagingComponents;
         messageContainer = messagingComponents.transform.GetComponentInChildren<MessagesContainer>().transform;
+        var messageInputField = messagingComponents.transform.GetComponentInChildren<MessageInputField>();
+        messageInputField.toChannelId = channelId;
     }
 
     public void ToggleComponents(bool toggle)

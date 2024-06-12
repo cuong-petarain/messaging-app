@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 
 public class MessageInputField : MonoBehaviour
 {
+    public string toChannelId;
     private TMP_InputField _inputField;
 
     private void Start()
@@ -27,7 +28,7 @@ public class MessageInputField : MonoBehaviour
     private void HandleSubmit()
     {
         string cleanedText = _inputField.text.Replace("\n", "").Replace("\r", "");
-        PanelMessage.OnMessageSubmitted(ClientObject.Instance.ThisUser.DisplayName, cleanedText);
+        PanelMessage.OnMessageSubmitted(toChannelId, ClientObject.Instance.ThisUser.DisplayName, cleanedText);
         _inputField.text = string.Empty;
     }
 }
