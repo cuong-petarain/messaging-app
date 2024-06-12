@@ -16,7 +16,6 @@ public class ClientObject : MonoBehaviour
     private const string UdidKey = "udid";
     private string deviceId;
 
-    public string thisUserId { get; set; }
 
     private IClient client;
     public IClient Client => client;
@@ -24,6 +23,7 @@ public class ClientObject : MonoBehaviour
     public ISocket Socket => socket;
     private ISession session;
     public ISession Session => session;
+    public IApiUser ThisUser { get; private set; }
 
     public static Action<IApiAccount> OnClientConnected;
 
@@ -42,6 +42,7 @@ public class ClientObject : MonoBehaviour
     {
         UserAccount.OnUpdateAccountInfoButtonPressed -= UpdateAccountInfo;
         socket.ReceivedNotification -= panelMessage.HandleNotification;
+        socket.ReceivedChannelMessage -= panelMessage.HandleIncomingMessages;
     }
 
     // Start is called before the first frame update
@@ -67,16 +68,23 @@ public class ClientObject : MonoBehaviour
         int connectionTimeout = 30;
         socket = client.NewSocket();
         socket.ReceivedNotification += panelMessage.HandleNotification;
-        await socket.ConnectAsync(session, appearOnline, connectionTimeout);
-    }
+        socket.ReceivedChannelMessage += panelMessage.HandleIncomingMessages;
 
-    public async void Logout()
-    {
-        await client.SessionLogoutAsync(session);
+        await socket.ConnectAsync(session, appearOnline, connectionTimeout);
     }
 
     private async void UpdateAccountInfo(string username, string name)
     {
         await client.UpdateAccountAsync(session, username, name);
+    }
+
+    public void SetUserInfo(IApiUser userInfo)
+    {
+        ThisUser = userInfo;
+    }
+
+    public async void Logout()
+    {
+        await client.SessionLogoutAsync(session);
     }
 }

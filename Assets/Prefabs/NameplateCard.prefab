@@ -405,4 +405,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   textDisplayName: {fileID: 2673986474157814432}
   representMessagingComponents: {fileID: 0}
-  thisUserId: 
+  messageContainer: {fileID: 0}
+  _messageCardPrefab: {fileID: 8245893164374432834, guid: 63ae0cf614bc88d4ea8fde5913dd8022, type: 3}
+  thisChannelId: 

@@ -20,7 +20,7 @@ public class UserStatusCard : MonoBehaviour
 
     public void OnCardClicked()
     {
-        if (_userId != ClientObject.Instance.thisUserId)
+        if (_userId != ClientObject.Instance.ThisUser.Id)
             PanelMessage.OnSentInviteDirectMessage?.Invoke(_userId);
     }
 }

@@ -2,6 +2,7 @@ using Nakama;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class PanelListUsers : MonoBehaviour
@@ -18,9 +19,14 @@ public class PanelListUsers : MonoBehaviour
         "48c0cbd0-3e93-4a17-83cd-ed5aaf2a664a"
     };
 
-    private void Start()
+    private async void Start()
     {
         _clientObject = ClientObject.Instance;
+        while (_clientObject.ThisUser == null)
+        {
+            await Task.Yield();
+        }
+        ids.Remove(_clientObject.ThisUser.Id);
         InvokeRepeating(nameof(RefreshListUsers), 2, 5);
     }
 

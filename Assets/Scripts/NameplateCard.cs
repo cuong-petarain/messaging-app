@@ -6,21 +6,37 @@ using UnityEngine;
 
 public class NameplateCard : MonoBehaviour
 {
+    [Header("UI")]
     public TMP_Text textDisplayName;
     public GameObject representMessagingComponents;
+    public Transform messageContainer;
+
+    [Header("Prefabs")]
+    [SerializeField] private MessageCard _messageCardPrefab;
 
     public string thisChannelId;
 
-    public void Populate(string userDisplayName, GameObject messagingComponents)
+    public void Populate(string channelId, string userDisplayName, GameObject messagingComponents)
     {
+        thisChannelId = channelId;
         textDisplayName.text = userDisplayName;
         textDisplayName.color = Color.black;
         representMessagingComponents = messagingComponents;
+        messageContainer = messagingComponents.transform.GetComponentInChildren<MessagesContainer>().transform;
+        var messageInputField = messagingComponents.transform.GetComponentInChildren<MessageInputField>();
+        messageInputField.toChannelId = channelId;
     }
 
     public void ToggleComponents(bool toggle)
     {
         textDisplayName.color = toggle ? Color.black : Color.white;
         representMessagingComponents.SetActive(toggle);
+    }
+
+    public IEnumerator InsertMessageToContainer(string displayName, string messageContent, bool isThisUser = false)
+    {
+        MessageCard messageCard = Instantiate(_messageCardPrefab, messageContainer);
+        messageCard.Populate(displayName, messageContent, isThisUser);
+        yield return null;
     }
 }
