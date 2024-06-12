@@ -1,18 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MessageCard : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    [SerializeField] private HorizontalLayoutGroup _horizontalLayoutGroup;
+    [SerializeField] private TMP_Text _textDisplayName;
+    [SerializeField] private TMP_Text _textMessageContent;
+    [SerializeField] private Image _backgroundImage;
+    [SerializeField] private Color _thisUserBackgroundColor;
+    [SerializeField] private Color _otherUserBackgroundColor;
 
-    // Update is called once per frame
-    void Update()
+    public void Populate(string displayName, string messageContent, bool isThisUser = false)
     {
-        
+        _textDisplayName.text = displayName + ":";
+        _textMessageContent.text = messageContent;
+        if (isThisUser)
+        {
+            _backgroundImage.color = _thisUserBackgroundColor;
+            _horizontalLayoutGroup.childAlignment = TextAnchor.UpperRight;
+        }
+        else
+        {
+            _backgroundImage.color = _otherUserBackgroundColor;
+            _horizontalLayoutGroup.childAlignment = TextAnchor.UpperLeft;
+        }
     }
 }

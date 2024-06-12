@@ -22,7 +22,7 @@ public class PanelMessage : MonoBehaviour
     private string _activeChannelId;
 
     public static Action<string> OnSentInviteDirectMessage;
-    public static Action<string> OnMessageSubmitted;
+    public static Action<string, string> OnMessageSubmitted;
 
     private void OnEnable()
     {
@@ -61,18 +61,11 @@ public class PanelMessage : MonoBehaviour
 
     private IEnumerator CreateNewChat(string toUserDisplayName)
     {
-        try
-        {
-            NameplateCard nameplate = Instantiate(_nameplateCardPrefab, _activeChatsPanel);
-            GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
-            nameplate.Populate(toUserDisplayName, messagingComponents);
+        NameplateCard nameplate = Instantiate(_nameplateCardPrefab, _activeChatsPanel);
+        GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
+        nameplate.Populate(_activeChannelId, toUserDisplayName, messagingComponents);
+        _chattingChannels.Add(nameplate);
 
-            _chattingChannels.Add(nameplate);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogException(ex);
-        }
         yield return null;
     }
 
@@ -80,7 +73,7 @@ public class PanelMessage : MonoBehaviour
     {
         foreach (var chat in _chattingChannels)
         {
-            if (chat.thisChannelId.Contains(userId) && chat.thisChannelId.Contains(ClientObject.Instance.thisUserId))
+            if (chat.thisChannelId.Contains(userId) && chat.thisChannelId.Contains(ClientObject.Instance.ThisUser.Id))
             {
                 chat.ToggleComponents(true);
             }
@@ -121,9 +114,27 @@ public class PanelMessage : MonoBehaviour
         }
     }
 
-    private void SendMessageToActiveChannel(string message)
+    private void SendMessageToActiveChannel(string senderName, string message)
     {
-        var messageContent = new Dictionary<string, string> { { "message", message } };
+        var messageContent = new Dictionary<string, string> { { senderName, message } };
         _ = ClientObject.Instance.Socket.WriteChatMessageAsync(_activeChannelId, messageContent.ToJson());
+    }
+
+    public void HandleIncomingMessages(IApiChannelMessage channelMessage)
+    {
+        NameplateCard receivingChannel = null;
+        foreach (var channel in _chattingChannels)
+        {
+            if (channel.thisChannelId == channelMessage.ChannelId)
+            {
+                receivingChannel = channel;
+                break;
+            }
+        }
+        if (receivingChannel != null)
+        {
+            Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
+            UnityMainThreadDispatcher.Instance().Enqueue(receivingChannel.InsertMessageToContainer(messageDetails.ElementAt(0).Key, messageDetails.ElementAt(0).Value, channelMessage.Username == ClientObject.Instance.ThisUser.Username));
+        }
     }
 }

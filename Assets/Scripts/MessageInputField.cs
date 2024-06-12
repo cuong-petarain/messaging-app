@@ -26,7 +26,8 @@ public class MessageInputField : MonoBehaviour
 
     private void HandleSubmit()
     {
-        PanelMessage.OnMessageSubmitted(_inputField.text);
+        string cleanedText = _inputField.text.Replace("\n", "").Replace("\r", "");
+        PanelMessage.OnMessageSubmitted(ClientObject.Instance.ThisUser.DisplayName, cleanedText);
         _inputField.text = string.Empty;
     }
 }

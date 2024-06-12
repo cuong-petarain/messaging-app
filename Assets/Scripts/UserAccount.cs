@@ -21,7 +21,7 @@ public class UserAccount : MonoBehaviour
             await Task.Yield();
         }
         var account = await ClientObject.Instance.Client.GetAccountAsync(ClientObject.Instance.Session);
-        ClientObject.Instance.thisUserId = account.User.Id;
+        ClientObject.Instance.SetUserInfo(account.User);
         GetUserProfile(account);
     }
 
