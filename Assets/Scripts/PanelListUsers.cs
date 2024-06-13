@@ -49,7 +49,7 @@ public class PanelListUsers : MonoBehaviour
         foreach(var user in users)
         {
             UserStatusCard card = Instantiate(_userStatusCardPrefab, transform);
-            card.Populate(user.Id, user.DisplayName, user.Online);
+            card.Populate(user.Id, user.Username, user.DisplayName, user.Online);
         }
     }
 }
