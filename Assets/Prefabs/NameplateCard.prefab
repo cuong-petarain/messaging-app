@@ -351,7 +351,7 @@ MonoBehaviour:
   _pointerClickColor: {r: 0.627451, g: 0.64705884, b: 0.7058824, a: 0.6666667}
   representMessagingComponents: {fileID: 0}
   messageContainer: {fileID: 0}
-  _messageCardPrefab: {fileID: 8245893164374432834, guid: 63ae0cf614bc88d4ea8fde5913dd8022, type: 3}
+  _messageCardPrefab: {fileID: 3905498204212543412, guid: 63ae0cf614bc88d4ea8fde5913dd8022, type: 3}
   thisChannelId: 
   IsActive: 0
 --- !u!1 &7464594719334451029
