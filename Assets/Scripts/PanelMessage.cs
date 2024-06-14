@@ -232,7 +232,6 @@ public class PanelMessage : MonoBehaviour
     private async void ActivateNextCard(NameplateCard cardToRemove)
     {
         await ClientObject.Instance.Socket.LeaveChatAsync(cardToRemove.thisChannelId);
-        RemoveChannelFromDisk(cardToRemove.thisChannelId);
         bool isActive = cardToRemove.IsActive;
         _chattingChannels.Remove(cardToRemove);
         Destroy(cardToRemove.representMessagingComponents);
@@ -243,6 +242,7 @@ public class PanelMessage : MonoBehaviour
             if (_chattingChannels.Count > 0)
                 ActivateChat(_chattingChannels[0].thisChannelId);
         }
+        RemoveChannelFromDisk(cardToRemove.thisChannelId);
     }
 
     private void RemoveChannelFromDisk(string toRemoveChannelId)
@@ -254,7 +254,7 @@ public class PanelMessage : MonoBehaviour
             int indexToRemove = 0;
             for (int i = 0; i < channelIds.Length; i++)
             {
-                if (channelIds[i] == toRemoveChannelId)
+                if (channelIds[i].Contains(toRemoveChannelId))
                 {
                     indexToRemove = i;
                     break;
