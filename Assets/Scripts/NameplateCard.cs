@@ -76,15 +76,23 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                 UnityMainThreadDispatcher.Instance().Enqueue(InsertMessageToContainer(
                     messageDetails.ElementAt(0).Key, 
                     messageDetails.ElementAt(0).Value, 
-                    channelMessage.CreateTime, 
+                    DateTime.Parse(channelMessage.CreateTime), 
                     channelMessage.Username == ClientObject.Instance.ThisUser.Username, true));
             }
             UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());
         }
     }
 
-    public IEnumerator InsertMessageToContainer(string displayName, string messageContent, string createTime, bool isThisUser = false, bool isPastMessage = false)
+    public IEnumerator InsertMessageToContainer(string displayName, string messageContent, DateTime createTime, bool isThisUser = false, bool isPastMessage = false)
     {
+        if (!_dateGroups.Contains(createTime.Date))
+        {
+            MessageCard dateCard = Instantiate(_messageCardPrefab, messageContainer);
+            dateCard.PopulateDateGroup(createTime.ToLongDateString());
+            dateGroupObjects.Add(dateCard.gameObject);
+            _dateGroups.Add(createTime.Date);
+        }
+
         MessageCard newMessage = Instantiate(_messageCardPrefab, messageContainer);
         if (isPastMessage)
         {
@@ -107,7 +115,6 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         {
             if (_dateGroups.Contains(group.Key))
                 yield break;
-            _dateGroups.Add(group.Key);
             MessageCard earliestMessage = null;
             DateTime earliest = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, 23, 59, 59, 999);
             foreach (var message in group)
@@ -122,6 +129,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             dateCard.transform.SetSiblingIndex(earliestMessage.transform.GetSiblingIndex());
             dateCard.PopulateDateGroup(group.Key.ToLongDateString());
             dateGroupObjects.Add(dateCard.gameObject);
+            _dateGroups.Add(group.Key);
         }
         yield return null;
     }
@@ -148,7 +156,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
                     UnityMainThreadDispatcher.Instance().Enqueue(InsertMessageToContainer(
                         messageDetails.ElementAt(0).Key, 
                         messageDetails.ElementAt(0).Value, 
-                        channelMessage.CreateTime, 
+                        DateTime.Parse(channelMessage.CreateTime), 
                         channelMessage.Username == ClientObject.Instance.ThisUser.Username, true));
                 }
                 UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());

@@ -202,7 +202,7 @@ public class PanelMessage : MonoBehaviour
             UnityMainThreadDispatcher.Instance().Enqueue(receivingChannel.InsertMessageToContainer(
                 messageDetails.ElementAt(0).Key, 
                 messageDetails.ElementAt(0).Value, 
-                channelMessage.CreateTime, 
+                DateTime.Parse(channelMessage.CreateTime), 
                 channelMessage.Username == ClientObject.Instance.ThisUser.Username));
         }
     }

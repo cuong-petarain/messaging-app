@@ -17,13 +17,12 @@ public class MessageCard : MonoBehaviour
 
     public DateTime createDateTime;
 
-    public void Populate(string displayName, string messageContent, string createTime, bool isThisUser = false)
+    public void Populate(string displayName, string messageContent, DateTime createTime, bool isThisUser = false)
     {
         _textDisplayName.text = displayName + ":";
         _textMessageContent.text = messageContent;
-        DateTime dateTime = DateTime.Parse(createTime);
-        createDateTime = dateTime;
-        _textSentTime.text = $"[{dateTime:HH:mm}]";
+        createDateTime = createTime;
+        _textSentTime.text = $"[{createTime.ToShortTimeString()}]";
         if (isThisUser)
         {
             _backgroundImage.color = _thisUserBackgroundColor;
