@@ -31,7 +31,7 @@ public class PanelMessage : MonoBehaviour
     {
         OnSentInviteDirectMessage += InviteDirectMessage;
         OnMessageSubmitted += SendMessageToActiveChannel;
-        OnNameplateCardClicked += ActivateChat;
+        OnNameplateCardClicked += ActivateChannel;
         OnNameplateCardRemoved += ActivateNextCard;
     }
 
@@ -39,7 +39,7 @@ public class PanelMessage : MonoBehaviour
     {
         OnSentInviteDirectMessage -= InviteDirectMessage;
         OnMessageSubmitted -= SendMessageToActiveChannel;
-        OnNameplateCardClicked -= ActivateChat;
+        OnNameplateCardClicked -= ActivateChannel;
         OnNameplateCardRemoved -= ActivateNextCard;
     }
 
@@ -49,25 +49,25 @@ public class PanelMessage : MonoBehaviour
         {
             await Task.Yield();
         }
-        StartCoroutine(LoadChannelsFromHistory());
+        LoadChannelsFromPlayerPrefs();
     }
 
-    private IEnumerator LoadChannelsFromHistory()
+    private async void LoadChannelsFromPlayerPrefs()
     {
         string[] historyChannels = GetChannels();
         if (historyChannels == null)
-            yield break;
+            return;
 
         foreach (string channel in historyChannels)
         {
             if (!string.IsNullOrEmpty(channel))
             {
                 string[] channelDetails = channel.Split(',');
-                yield return StartCoroutine(CreateNewChat(channelDetails[0], channelDetails[2]));
-                GetMessageHistoryOfChannel(channelDetails[0], channelDetails[1]);
+                _ = await ClientObject.Instance.Socket.JoinChatAsync(channelDetails[1], ChannelType.Room, true, false);
+                StartCoroutine(CreateChannel(channelDetails[0], channelDetails[2]));
             }
         }
-        ActivateChat(_chattingChannels[0].thisChannelId);
+        ActivateChannel(_chattingChannels[0].thisChannelId);
     }
 
     private string[] GetChannels()
@@ -79,31 +79,6 @@ public class PanelMessage : MonoBehaviour
             return channelIds;
         }
         return null;
-    }
-
-    private async void GetMessageHistoryOfChannel(string channelId, string roomName)
-    {
-        NameplateCard receivingChannel = null;
-        foreach (var channel in _chattingChannels)
-        {
-            if (channel.thisChannelId == channelId)
-            {
-                receivingChannel = channel;
-                break;
-            }
-        }
-
-        _ = await ClientObject.Instance.Socket.JoinChatAsync(roomName, ChannelType.Room, true, false);
-        IApiChannelMessageList result = await ClientObject.Instance.Client.ListChannelMessagesAsync(ClientObject.Instance.Session, channelId, 10, true);
-        List<IApiChannelMessage> listMessages = result.Messages.ToList();
-        if (listMessages.Count > 0)
-        {
-            foreach (var channelMessage in listMessages)
-            {
-                Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
-                UnityMainThreadDispatcher.Instance().Enqueue(receivingChannel.InsertMessageToContainer(messageDetails.ElementAt(0).Key, messageDetails.ElementAt(0).Value, channelMessage.Username == ClientObject.Instance.ThisUser.Username));
-            }
-        }
     }
 
     private async void InviteDirectMessage(string toUserId, string toUserName)
@@ -118,14 +93,13 @@ public class PanelMessage : MonoBehaviour
             var usersList = users.Users.ToList();
             if (usersList.Count > 0)
             {
-                StartCoroutine(CreateNewChat(channel.Id, usersList[0].DisplayName));
+                StartCoroutine(CreateChannel(channel.Id, usersList[0].DisplayName));
                 StartCoroutine(SaveChannelToDisk(channel.Id, channel.RoomName, usersList[0]));
-                GetMessageHistoryOfChannel(channel.Id, roomName);
             }
         }
         else
         {
-            ActivateChat(channel.Id);
+            ActivateChannel(channel.Id);
         }
 
         await ClientObject.Instance.Socket.LeaveChatAsync(tmpChannel.Id);  // leave DirectMessage channel
@@ -142,27 +116,27 @@ public class PanelMessage : MonoBehaviour
             var usersList = users.Users.ToList();
             if (usersList.Count > 0)
             {
-                UnityMainThreadDispatcher.Instance().Enqueue(CreateNewChat(channel.Id, usersList[0].DisplayName));
+                UnityMainThreadDispatcher.Instance().Enqueue(CreateChannel(channel.Id, usersList[0].DisplayName));
                 UnityMainThreadDispatcher.Instance().Enqueue(SaveChannelToDisk(channel.Id, channel.RoomName, usersList[0]));
             }
         }
         else
         {
-            ActivateChat(requestorUserId);
+            ActivateChannel(requestorUserId);
         }
     }
 
-    private IEnumerator CreateNewChat(string channelId, string toUserDisplayName)
+    private IEnumerator CreateChannel(string channelId, string toUserDisplayName)
     {
         NameplateCard nameplate = Instantiate(_nameplateCardPrefab, _activeChatsPanel);
         GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
         nameplate.Populate(channelId, toUserDisplayName, messagingComponents);
         _chattingChannels.Add(nameplate);
-        ActivateChat(channelId);
+        ActivateChannel(channelId);
         yield return null;
     }
 
-    private void ActivateChat(string channelId)
+    private void ActivateChannel(string channelId)
     {
         foreach (var chat in _chattingChannels)
         {
@@ -225,7 +199,11 @@ public class PanelMessage : MonoBehaviour
         if (receivingChannel != null)
         {
             Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
-            UnityMainThreadDispatcher.Instance().Enqueue(receivingChannel.InsertMessageToContainer(messageDetails.ElementAt(0).Key, messageDetails.ElementAt(0).Value, channelMessage.Username == ClientObject.Instance.ThisUser.Username));
+            UnityMainThreadDispatcher.Instance().Enqueue(receivingChannel.InsertMessageToContainer(
+                messageDetails.ElementAt(0).Key, 
+                messageDetails.ElementAt(0).Value, 
+                DateTime.Parse(channelMessage.CreateTime), 
+                channelMessage.Username == ClientObject.Instance.ThisUser.Username));
         }
     }
 
@@ -240,7 +218,7 @@ public class PanelMessage : MonoBehaviour
         if (isActive)
         {
             if (_chattingChannels.Count > 0)
-                ActivateChat(_chattingChannels[0].thisChannelId);
+                ActivateChannel(_chattingChannels[0].thisChannelId);
         }
         RemoveChannelFromDisk(cardToRemove.thisChannelId);
     }

@@ -1,3 +1,5 @@
+using Nakama;
+using PimDeWitte.UnityMainThreadDispatcher;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,9 +7,14 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Nakama.TinyJson;
+using System;
 
 public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
+    public string thisChannelId;
+    public bool IsActive;
+
     [Header("UI")]
     public TMP_Text textDisplayName;
     public Image backgroundImage;
@@ -21,18 +28,30 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [Header("Prefabs")]
     [SerializeField] private MessageCard _messageCardPrefab;
 
-    public string thisChannelId;
-    public bool IsActive;
+    private string _nextCursor;
+    private ScrollRect _messagesScrollRect;
+    private readonly float FETCH_THRESHOLD = 0.9f;
+    private int _messageCount = 10;
+    private float _cooldownHistory = 0.5f;
+    private float _lastFetchHistoryTime = 0;
+    private List<MessageCard> _messageCards = new List<MessageCard>();
+    private List<DateTime> _dateGroups = new List<DateTime>();
+    private List<GameObject> dateGroupObjects = new List<GameObject>();
 
     public void Populate(string channelId, string userDisplayName, GameObject messagingComponents)
     {
         thisChannelId = channelId;
         textDisplayName.text = userDisplayName;
         textDisplayName.color = Color.black;
+
         representMessagingComponents = messagingComponents;
-        messageContainer = messagingComponents.transform.GetComponentInChildren<MessagesContainer>().transform;
-        var messageInputField = messagingComponents.transform.GetComponentInChildren<MessageInputField>();
+        _messagesScrollRect = messagingComponents.GetComponentInChildren<ScrollRect>();
+        _messagesScrollRect.onValueChanged.AddListener(OnScrollValueChanged);
+        messageContainer = messagingComponents.GetComponentInChildren<MessagesContainer>().transform;
+        var messageInputField = messagingComponents.GetComponentInChildren<MessageInputField>();
         messageInputField.toChannelId = channelId;
+
+        FetchMessageHistoryOfChannel();
     }
 
     public void ToggleComponents(bool toggle)
@@ -44,11 +63,105 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         backgroundImage.enabled = toggle;
     }
 
-    public IEnumerator InsertMessageToContainer(string displayName, string messageContent, bool isThisUser = false)
+    private async void FetchMessageHistoryOfChannel()
     {
-        MessageCard messageCard = Instantiate(_messageCardPrefab, messageContainer);
-        messageCard.Populate(displayName, messageContent, isThisUser);
+        IApiChannelMessageList result = await ClientObject.Instance.Client.ListChannelMessagesAsync(ClientObject.Instance.Session, thisChannelId, _messageCount, false);
+        _nextCursor = result.NextCursor;
+        List<IApiChannelMessage> listMessages = result.Messages.ToList();
+        if (listMessages.Count > 0)
+        {
+            foreach (var channelMessage in listMessages)
+            {
+                Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
+                UnityMainThreadDispatcher.Instance().Enqueue(InsertMessageToContainer(
+                    messageDetails.ElementAt(0).Key, 
+                    messageDetails.ElementAt(0).Value, 
+                    DateTime.Parse(channelMessage.CreateTime), 
+                    channelMessage.Username == ClientObject.Instance.ThisUser.Username, true));
+            }
+            UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());
+        }
+    }
+
+    public IEnumerator InsertMessageToContainer(string displayName, string messageContent, DateTime createTime, bool isThisUser = false, bool isPastMessage = false)
+    {
+        if (!_dateGroups.Contains(createTime.Date))
+        {
+            MessageCard dateCard = Instantiate(_messageCardPrefab, messageContainer);
+            dateCard.PopulateDateGroup(createTime.ToLongDateString());
+            dateGroupObjects.Add(dateCard.gameObject);
+            _dateGroups.Add(createTime.Date);
+        }
+
+        MessageCard newMessage = Instantiate(_messageCardPrefab, messageContainer);
+        if (isPastMessage)
+        {
+            newMessage.transform.SetSiblingIndex(0);
+        }
+        newMessage.Populate(displayName, messageContent, createTime, isThisUser);
+        _messageCards.Add(newMessage);
         yield return null;
+    }
+
+    private IEnumerator ProcessDateTimePosted()
+    {
+        foreach (var d in dateGroupObjects)
+            Destroy(d);
+        dateGroupObjects.Clear();
+        _dateGroups.Clear();
+
+        var groupedMessages = _messageCards.GroupBy(m => m.createDateTime.Date).ToList();
+        foreach (var group in groupedMessages)
+        {
+            if (_dateGroups.Contains(group.Key))
+                yield break;
+            MessageCard earliestMessage = null;
+            DateTime earliest = new DateTime(group.Key.Year, group.Key.Month, group.Key.Day, 23, 59, 59, 999);
+            foreach (var message in group)
+            {
+                if (message.createDateTime <= earliest)
+                {
+                    earliestMessage = message;
+                    earliest = message.createDateTime;
+                }
+            }
+            MessageCard dateCard = Instantiate(_messageCardPrefab, messageContainer);
+            dateCard.transform.SetSiblingIndex(earliestMessage.transform.GetSiblingIndex());
+            dateCard.PopulateDateGroup(group.Key.ToLongDateString());
+            dateGroupObjects.Add(dateCard.gameObject);
+            _dateGroups.Add(group.Key);
+        }
+        yield return null;
+    }
+
+    private async void OnScrollValueChanged(Vector2 scrollValue)
+    {
+        if (string.IsNullOrEmpty(_nextCursor))
+            return;
+
+        if (_messagesScrollRect.verticalNormalizedPosition >= FETCH_THRESHOLD)
+        {
+            if (Time.timeSinceLevelLoad < _lastFetchHistoryTime + _cooldownHistory)
+                return;
+            _lastFetchHistoryTime = Time.timeSinceLevelLoad;
+
+            IApiChannelMessageList result = await ClientObject.Instance.Client.ListChannelMessagesAsync(ClientObject.Instance.Session, thisChannelId, _messageCount, false, _nextCursor);
+            _nextCursor = result.NextCursor;
+            List<IApiChannelMessage> listMessages = result.Messages.ToList();
+            if (listMessages.Count > 0)
+            {
+                foreach (var channelMessage in listMessages)
+                {
+                    Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
+                    UnityMainThreadDispatcher.Instance().Enqueue(InsertMessageToContainer(
+                        messageDetails.ElementAt(0).Key, 
+                        messageDetails.ElementAt(0).Value, 
+                        DateTime.Parse(channelMessage.CreateTime), 
+                        channelMessage.Username == ClientObject.Instance.ThisUser.Username, true));
+                }
+                UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());
+            }
+        }
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -76,5 +189,10 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         {
             PanelMessage.OnNameplateCardRemoved?.Invoke(this);
         }
+    }
+
+    private void OnDisable()
+    {
+        _messagesScrollRect.onValueChanged.RemoveListener(OnScrollValueChanged);
     }
 }
