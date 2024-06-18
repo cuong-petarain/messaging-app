@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 public class UserAccount : MonoBehaviour
 {
-    [SerializeField] TMP_Text textId;
-    [SerializeField] TMP_InputField inputUsername;
+    [SerializeField] TMP_Text textEmail;
+    [SerializeField] TMP_Text textUsername;
     [SerializeField] TMP_InputField inputName;
 
     public static Action<string, string> OnUpdateAccountInfoButtonPressed;
@@ -27,13 +27,13 @@ public class UserAccount : MonoBehaviour
 
     private void GetUserProfile(IApiAccount accountInfo)
     {
-        textId.text = accountInfo.User.Id;
-        inputUsername.text = accountInfo.User.Username;
+        textEmail.text = accountInfo.Email;
+        textUsername.text = accountInfo.User.Username;
         inputName.text = accountInfo.User.DisplayName;
     }
 
     public void UpdateAccountButtonClicked()
     {
-        OnUpdateAccountInfoButtonPressed?.Invoke(inputUsername.text, inputName.text);
+        OnUpdateAccountInfoButtonPressed?.Invoke(textUsername.text, inputName.text);
     }
 }
