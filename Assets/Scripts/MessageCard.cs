@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -8,15 +9,21 @@ public class MessageCard : MonoBehaviour
 {
     [SerializeField] private HorizontalLayoutGroup _horizontalLayoutGroup;
     [SerializeField] private TMP_Text _textDisplayName;
+    [SerializeField] private TMP_Text _textSentTime;
     [SerializeField] private TMP_Text _textMessageContent;
     [SerializeField] private Image _backgroundImage;
     [SerializeField] private Color _thisUserBackgroundColor;
     [SerializeField] private Color _otherUserBackgroundColor;
 
-    public void Populate(string displayName, string messageContent, bool isThisUser = false)
+    public DateTime createDateTime;
+
+    public void Populate(string displayName, string messageContent, string createTime, bool isThisUser = false)
     {
         _textDisplayName.text = displayName + ":";
         _textMessageContent.text = messageContent;
+        DateTime dateTime = DateTime.Parse(createTime);
+        createDateTime = dateTime;
+        _textSentTime.text = $"[{dateTime:HH:mm}]";
         if (isThisUser)
         {
             _backgroundImage.color = _thisUserBackgroundColor;
@@ -27,5 +34,12 @@ public class MessageCard : MonoBehaviour
             _backgroundImage.color = _otherUserBackgroundColor;
             _horizontalLayoutGroup.childAlignment = TextAnchor.UpperLeft;
         }
+    }
+
+    public void PopulateDateGroup(string dateString)
+    {
+        _textSentTime.text = dateString;
+        _textSentTime.fontSize += 2;
+        _textSentTime.color = Color.black;
     }
 }
