@@ -152,6 +152,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _textName: {fileID: 6808589759794219761}
   _textOnlineStatus: {fileID: 5576520003162989873}
+  _imageAvatar: {fileID: 8114049534268386152}
+  _defaultSprites:
+  - {fileID: 21300000, guid: a9d785d5b26fbeb479352658d19fe413, type: 3}
+  - {fileID: 21300000, guid: c49fdde696925724ca9ea23e5e8e53f2, type: 3}
+  - {fileID: 21300000, guid: 689a1a91b0d9ba04db76135cc6597bab, type: 3}
+  - {fileID: 21300000, guid: f5137efb9c6d7714f866ff9a9391aa7e, type: 3}
+  - {fileID: 21300000, guid: a57d5e22be6e43b4fb694e878a36a3ff, type: 3}
+  - {fileID: 21300000, guid: 0b8901fc203c6404a9f4d9907c0ec192, type: 3}
+  - {fileID: 21300000, guid: a89d5660787760143a104b008e038569, type: 3}
 --- !u!1 &4148085567620509239
 GameObject:
   m_ObjectHideFlags: 0

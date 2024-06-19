@@ -426,11 +426,20 @@ MonoBehaviour:
   IsActive: 0
   textDisplayName: {fileID: 6528170438652192236}
   backgroundImage: {fileID: 3039752005067536576}
+  avatarImage: {fileID: 1029147215593830090}
   _pointerEnterColor: {r: 0.627451, g: 0.64705884, b: 0.7058824, a: 0.3137255}
   _pointerClickColor: {r: 0.627451, g: 0.64705884, b: 0.7058824, a: 0.6666667}
   representMessagingComponents: {fileID: 0}
   messageContainer: {fileID: 0}
   _messageCardPrefab: {fileID: 3905498204212543412, guid: 63ae0cf614bc88d4ea8fde5913dd8022, type: 3}
+  _defaultSprites:
+  - {fileID: 21300000, guid: a9d785d5b26fbeb479352658d19fe413, type: 3}
+  - {fileID: 21300000, guid: c49fdde696925724ca9ea23e5e8e53f2, type: 3}
+  - {fileID: 21300000, guid: 689a1a91b0d9ba04db76135cc6597bab, type: 3}
+  - {fileID: 21300000, guid: f5137efb9c6d7714f866ff9a9391aa7e, type: 3}
+  - {fileID: 21300000, guid: a57d5e22be6e43b4fb694e878a36a3ff, type: 3}
+  - {fileID: 21300000, guid: 0b8901fc203c6404a9f4d9907c0ec192, type: 3}
+  - {fileID: 21300000, guid: a89d5660787760143a104b008e038569, type: 3}
 --- !u!1 &7295082489614162919
 GameObject:
   m_ObjectHideFlags: 0
