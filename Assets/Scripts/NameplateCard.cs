@@ -18,6 +18,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [Header("UI")]
     public TMP_Text textDisplayName;
     public Image backgroundImage;
+    public Image avatarImage;
     [SerializeField] private Color _pointerEnterColor;
     [SerializeField] private Color _pointerClickColor;
 
@@ -27,11 +28,12 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     [Header("Prefabs")]
     [SerializeField] private MessageCard _messageCardPrefab;
+    [SerializeField] private Sprite[] _defaultSprites = new Sprite[7];
 
     private string _nextCursor;
     private ScrollRect _messagesScrollRect;
     private readonly float FETCH_THRESHOLD = 0.9f;
-    private int _messageCount = 10;
+    private int _messageCount = 40;
     private float _cooldownHistory = 0.5f;
     private float _lastFetchHistoryTime = 0;
     private List<MessageCard> _messageCards = new List<MessageCard>();
@@ -43,15 +45,25 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         thisChannelId = channelId;
         textDisplayName.text = userDisplayName;
         textDisplayName.color = Color.black;
+        avatarImage.sprite = _defaultSprites[UnityEngine.Random.Range(0, _defaultSprites.Length)];
 
         representMessagingComponents = messagingComponents;
+        messagingComponents.transform.Find("Text_NameChat").GetComponent<TMP_Text>().text = userDisplayName;
+        messagingComponents.transform.Find("Image_Avatar").GetComponent<Image>().sprite = avatarImage.sprite;
         _messagesScrollRect = messagingComponents.GetComponentInChildren<ScrollRect>();
         _messagesScrollRect.onValueChanged.AddListener(OnScrollValueChanged);
         messageContainer = messagingComponents.GetComponentInChildren<MessagesContainer>().transform;
         var messageInputField = messagingComponents.GetComponentInChildren<MessageInputField>();
         messageInputField.toChannelId = channelId;
-
+        var buttonBack = messagingComponents.GetComponentInChildren<Button>();
+        buttonBack.onClick.AddListener(() => BackToNames());
+        ToggleComponents(false);
         FetchMessageHistoryOfChannel();
+    }
+
+    private void BackToNames()
+    {
+        ToggleComponents(false);
     }
 
     public void ToggleComponents(bool toggle)

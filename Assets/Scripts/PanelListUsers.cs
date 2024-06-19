@@ -8,8 +8,9 @@ using UnityEngine;
 public class PanelListUsers : MonoBehaviour
 {
     [SerializeField] private UserStatusCard _userStatusCardPrefab;
-    private ClientObject _clientObject;
+    [SerializeField] private Transform _listUsersTransform;
 
+    private ClientObject _clientObject;
     private List<string> ids = new List<string>()
     {
         "7f002a87-1a52-42a9-b61f-2bbd97dd3bae",
@@ -27,12 +28,12 @@ public class PanelListUsers : MonoBehaviour
             await Task.Yield();
         }
         ids.Remove(_clientObject.ThisUser.Id);
-        InvokeRepeating(nameof(RefreshListUsers), 2, 5);
+        InvokeRepeating(nameof(RefreshListUsers), 1, 5);
     }
 
     private async void RefreshListUsers()
     {
-        if (!_clientObject.Socket.IsConnected)
+        if (!_clientObject.Socket.IsConnected || !gameObject.activeInHierarchy)
             return;
 
         var users = await _clientObject.Client.GetUsersAsync(_clientObject.Session, ids);
@@ -41,14 +42,14 @@ public class PanelListUsers : MonoBehaviour
 
     private void FillPanel(List<IApiUser> users)
     {
-        foreach (Transform child in transform)
+        foreach (Transform child in _listUsersTransform)
         {
             Destroy(child.gameObject);
         }
 
         foreach(var user in users)
         {
-            UserStatusCard card = Instantiate(_userStatusCardPrefab, transform);
+            UserStatusCard card = Instantiate(_userStatusCardPrefab, _listUsersTransform);
             card.Populate(user.Id, user.Username, user.DisplayName, user.Online);
         }
     }
