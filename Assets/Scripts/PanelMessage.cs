@@ -8,12 +8,13 @@ using TMPro;
 using UnityEngine;
 using Nakama.TinyJson;
 using PimDeWitte.UnityMainThreadDispatcher;
-using System.Numerics;
+using UnityEngine.UI;
 
 public class PanelMessage : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private Transform _activeChatsPanel;
+    [SerializeField] private Button _buttonPanelChats;
 
     [Header("Prefabs")]
     [SerializeField] private NameplateCard _nameplateCardPrefab;
@@ -67,7 +68,6 @@ public class PanelMessage : MonoBehaviour
                 StartCoroutine(CreateChannel(channelDetails[0], channelDetails[2]));
             }
         }
-        ActivateChannel(_chattingChannels[0].thisChannelId);
     }
 
     private string[] GetChannels()
@@ -83,6 +83,7 @@ public class PanelMessage : MonoBehaviour
 
     private async void InviteDirectMessage(string toUserId, string toUserName)
     {
+        _buttonPanelChats.onClick.Invoke();
         IChannel tmpChannel = await ClientObject.Instance.Socket.JoinChatAsync(toUserId, ChannelType.DirectMessage);  // to send notification to target user
         string roomName = ClientObject.Instance.ThisUser.Username + "." + toUserName;
         IChannel channel = await ClientObject.Instance.Socket.JoinChatAsync(roomName, ChannelType.Room, true, false);
@@ -132,7 +133,6 @@ public class PanelMessage : MonoBehaviour
         GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
         nameplate.Populate(channelId, toUserDisplayName, messagingComponents);
         _chattingChannels.Add(nameplate);
-        ActivateChannel(channelId);
         yield return null;
     }
 

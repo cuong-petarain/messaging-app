@@ -31,7 +31,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private string _nextCursor;
     private ScrollRect _messagesScrollRect;
     private readonly float FETCH_THRESHOLD = 0.9f;
-    private int _messageCount = 10;
+    private int _messageCount = 40;
     private float _cooldownHistory = 0.5f;
     private float _lastFetchHistoryTime = 0;
     private List<MessageCard> _messageCards = new List<MessageCard>();
@@ -45,13 +45,21 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         textDisplayName.color = Color.black;
 
         representMessagingComponents = messagingComponents;
+        messagingComponents.transform.Find("Text_NameChat").GetComponent<TMP_Text>().text = userDisplayName;
         _messagesScrollRect = messagingComponents.GetComponentInChildren<ScrollRect>();
         _messagesScrollRect.onValueChanged.AddListener(OnScrollValueChanged);
         messageContainer = messagingComponents.GetComponentInChildren<MessagesContainer>().transform;
         var messageInputField = messagingComponents.GetComponentInChildren<MessageInputField>();
         messageInputField.toChannelId = channelId;
-
+        var buttonBack = messagingComponents.GetComponentInChildren<Button>();
+        buttonBack.onClick.AddListener(() => BackToNames());
+        ToggleComponents(false);
         FetchMessageHistoryOfChannel();
+    }
+
+    private void BackToNames()
+    {
+        ToggleComponents(false);
     }
 
     public void ToggleComponents(bool toggle)
