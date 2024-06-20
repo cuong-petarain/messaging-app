@@ -35,9 +35,9 @@ public class MessageCard : MonoBehaviour
         }
     }
 
-    public void PopulateDateGroup(string dateString)
+    public void PopulateDateGroup(DateTime createTime)
     {
-        _textSentTime.text = dateString;
+        _textSentTime.text = createTime.ToString("MMMM d, yyyy");
         _textSentTime.fontSize += 2;
         _textSentTime.color = Color.black;
     }
