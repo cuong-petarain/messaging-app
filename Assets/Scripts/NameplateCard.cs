@@ -78,12 +78,13 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         backgroundImage.enabled = toggle;
     }
 
-    public void UpdateLastMessageToNameplate(string messageContent)
+    public IEnumerator UpdateLastMessageToNameplate(string messageContent)
     {
         if (messageContent.Length >= 50)
             textLastMessage.text = messageContent[..50];
         else
             textLastMessage.text = messageContent;
+        yield return null;
     }
 
     private async void FetchMessageHistoryOfChannel()
@@ -104,7 +105,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
                 if (i == 0)
                 {
-                    UpdateLastMessageToNameplate(messageDetails.ElementAt(0).Value);
+                    UnityMainThreadDispatcher.Instance().Enqueue(UpdateLastMessageToNameplate(messageDetails.ElementAt(0).Value));
                 }
             }
             UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());

@@ -360,7 +360,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 0.2784314, g: 0.3254902, b: 0.5176471, a: 0.7058824}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -508,8 +508,8 @@ MonoBehaviour:
   _textSentTime: {fileID: 4507691420881434632}
   _textMessageContent: {fileID: 4607105055317087691}
   _backgroundImage: {fileID: 4111066550905082165}
-  _thisUserBackgroundColor: {r: 0, g: 0.5294118, b: 0.9019608, a: 0.7058824}
-  _otherUserBackgroundColor: {r: 0.32156864, g: 0.33333334, b: 0.3647059, a: 0.7058824}
+  _thisUserBackgroundColor: {r: 0.08373868, g: 0.5512577, b: 0.91823894, a: 1}
+  _otherUserBackgroundColor: {r: 0.2509804, g: 0.2627451, b: 0.2901961, a: 1}
 --- !u!1 &7518053596992286152
 GameObject:
   m_ObjectHideFlags: 0

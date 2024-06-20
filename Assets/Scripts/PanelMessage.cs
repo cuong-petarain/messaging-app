@@ -222,7 +222,7 @@ public class PanelMessage : MonoBehaviour
                 messageDetails.ElementAt(0).Value, 
                 DateTime.Parse(channelMessage.CreateTime), 
                 channelMessage.Username == ClientObject.Instance.ThisUser.Username));
-            receivingChannel.UpdateLastMessageToNameplate(messageDetails.ElementAt(0).Value);
+            UnityMainThreadDispatcher.Instance().Enqueue(receivingChannel.UpdateLastMessageToNameplate(messageDetails.ElementAt(0).Value));
         }
     }
 
