@@ -426,6 +426,7 @@ MonoBehaviour:
   thisRoomName: 
   IsActive: 0
   textDisplayName: {fileID: 6528170438652192236}
+  textLastMessage: {fileID: 214188977690608225}
   backgroundImage: {fileID: 3039752005067536576}
   avatarImage: {fileID: 1029147215593830090}
   _pointerEnterColor: {r: 0.627451, g: 0.64705884, b: 0.7058824, a: 0.3137255}
@@ -506,7 +507,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: something something
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

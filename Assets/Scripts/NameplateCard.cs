@@ -18,6 +18,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     [Header("UI")]
     public TMP_Text textDisplayName;
+    public TMP_Text textLastMessage;
     public Image backgroundImage;
     public Image avatarImage;
     [SerializeField] private Color _pointerEnterColor;
@@ -77,6 +78,14 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         backgroundImage.enabled = toggle;
     }
 
+    public void UpdateLastMessageToNameplate(string messageContent)
+    {
+        if (messageContent.Length >= 50)
+            textLastMessage.text = messageContent[..50];
+        else
+            textLastMessage.text = messageContent;
+    }
+
     private async void FetchMessageHistoryOfChannel()
     {
         IApiChannelMessageList result = await ClientObject.Instance.Client.ListChannelMessagesAsync(ClientObject.Instance.Session, thisChannelId, _messageCount, false);
@@ -84,14 +93,19 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         List<IApiChannelMessage> listMessages = result.Messages.ToList();
         if (listMessages.Count > 0)
         {
-            foreach (var channelMessage in listMessages)
+            for (int i = 0; i < listMessages.Count; i++)
             {
-                Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
+                Dictionary<string, string> messageDetails = listMessages[i].Content.FromJson<Dictionary<string, string>>();
                 UnityMainThreadDispatcher.Instance().Enqueue(InsertMessageToContainer(
                     messageDetails.ElementAt(0).Key, 
                     messageDetails.ElementAt(0).Value, 
-                    DateTime.Parse(channelMessage.CreateTime), 
-                    channelMessage.Username == ClientObject.Instance.ThisUser.Username, true));
+                    DateTime.Parse(listMessages[i].CreateTime),
+                    listMessages[i].Username == ClientObject.Instance.ThisUser.Username, true));
+
+                if (i == 0)
+                {
+                    UpdateLastMessageToNameplate(messageDetails.ElementAt(0).Value);
+                }
             }
             UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());
         }
