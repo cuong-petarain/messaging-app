@@ -13,10 +13,12 @@ using System;
 public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     public string thisChannelId;
+    public string thisRoomName;
     public bool IsActive;
 
     [Header("UI")]
     public TMP_Text textDisplayName;
+    public TMP_Text textLastMessage;
     public Image backgroundImage;
     public Image avatarImage;
     [SerializeField] private Color _pointerEnterColor;
@@ -40,9 +42,10 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     private List<DateTime> _dateGroups = new List<DateTime>();
     private List<GameObject> dateGroupObjects = new List<GameObject>();
 
-    public void Populate(string channelId, string userDisplayName, GameObject messagingComponents)
+    public void Populate(string channelId, string roomName, string userDisplayName, GameObject messagingComponents)
     {
         thisChannelId = channelId;
+        thisRoomName = roomName;
         textDisplayName.text = userDisplayName;
         textDisplayName.color = Color.black;
         avatarImage.sprite = _defaultSprites[UnityEngine.Random.Range(0, _defaultSprites.Length)];
@@ -75,6 +78,15 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         backgroundImage.enabled = toggle;
     }
 
+    public IEnumerator UpdateLastMessageToNameplate(string messageContent)
+    {
+        if (messageContent.Length >= 50)
+            textLastMessage.text = messageContent[..50];
+        else
+            textLastMessage.text = messageContent;
+        yield return null;
+    }
+
     private async void FetchMessageHistoryOfChannel()
     {
         IApiChannelMessageList result = await ClientObject.Instance.Client.ListChannelMessagesAsync(ClientObject.Instance.Session, thisChannelId, _messageCount, false);
@@ -82,14 +94,19 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         List<IApiChannelMessage> listMessages = result.Messages.ToList();
         if (listMessages.Count > 0)
         {
-            foreach (var channelMessage in listMessages)
+            for (int i = 0; i < listMessages.Count; i++)
             {
-                Dictionary<string, string> messageDetails = channelMessage.Content.FromJson<Dictionary<string, string>>();
+                Dictionary<string, string> messageDetails = listMessages[i].Content.FromJson<Dictionary<string, string>>();
                 UnityMainThreadDispatcher.Instance().Enqueue(InsertMessageToContainer(
                     messageDetails.ElementAt(0).Key, 
                     messageDetails.ElementAt(0).Value, 
-                    DateTime.Parse(channelMessage.CreateTime), 
-                    channelMessage.Username == ClientObject.Instance.ThisUser.Username, true));
+                    DateTime.Parse(listMessages[i].CreateTime),
+                    listMessages[i].Username == ClientObject.Instance.ThisUser.Username, true));
+
+                if (i == 0)
+                {
+                    UnityMainThreadDispatcher.Instance().Enqueue(UpdateLastMessageToNameplate(messageDetails.ElementAt(0).Value));
+                }
             }
             UnityMainThreadDispatcher.Instance().Enqueue(ProcessDateTimePosted());
         }
@@ -100,7 +117,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         if (!_dateGroups.Contains(createTime.Date))
         {
             MessageCard dateCard = Instantiate(_messageCardPrefab, messageContainer);
-            dateCard.PopulateDateGroup(createTime.ToLongDateString());
+            dateCard.PopulateDateGroup(createTime);
             dateGroupObjects.Add(dateCard.gameObject);
             _dateGroups.Add(createTime.Date);
         }
@@ -139,7 +156,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
             }
             MessageCard dateCard = Instantiate(_messageCardPrefab, messageContainer);
             dateCard.transform.SetSiblingIndex(earliestMessage.transform.GetSiblingIndex());
-            dateCard.PopulateDateGroup(group.Key.ToLongDateString());
+            dateCard.PopulateDateGroup(group.Key);
             dateGroupObjects.Add(dateCard.gameObject);
             _dateGroups.Add(group.Key);
         }
@@ -195,7 +212,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     {
         if (eventData.button == PointerEventData.InputButton.Left)
         {
-            PanelMessage.OnNameplateCardClicked?.Invoke(thisChannelId);
+            PanelMessage.OnNameplateCardClicked?.Invoke(thisRoomName);
         }
         else if (eventData.button == PointerEventData.InputButton.Right)
         {

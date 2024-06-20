@@ -17,7 +17,8 @@ public class PanelListUsers : MonoBehaviour
         "e50c2e14-a1dc-4f6e-922b-2a044ea7d794",
         "f836ddf1-c315-4774-97c1-cd81193b8260",
         "a0941555-ed4f-4403-a0fa-2de25022200b",
-        "48c0cbd0-3e93-4a17-83cd-ed5aaf2a664a"
+        "48c0cbd0-3e93-4a17-83cd-ed5aaf2a664a",
+        "7dd33f1b-e216-477a-bdf0-f0bb64d86d5e"
     };
 
     private async void Start()

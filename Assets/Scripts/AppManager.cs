@@ -1,12 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class AppManager : MonoBehaviour
 {
     [SerializeField] private CanvasGroup contactsPanel;
     [SerializeField] private CanvasGroup chatsPanel;
     [SerializeField] private CanvasGroup settingsPanel;
+    [SerializeField] private Image imageButtonContacts;
+    [SerializeField] private Image imageButtonChats;
+    [SerializeField] private Image imageButtonSettings;
 
     private void Awake()
     {
@@ -15,6 +19,9 @@ public class AppManager : MonoBehaviour
 
     public void OnContactsButtonClicked()
     {
+        imageButtonContacts.enabled = true;
+        imageButtonChats.enabled = false;
+        imageButtonSettings.enabled = false;
         EnableCanvasGroup(contactsPanel);
         DisableCanvasGroup(chatsPanel);
         DisableCanvasGroup(settingsPanel);
@@ -22,6 +29,9 @@ public class AppManager : MonoBehaviour
 
     public void OnChatsButtonClicked()
     {
+        imageButtonContacts.enabled = false;;
+        imageButtonChats.enabled = true;
+        imageButtonSettings.enabled = false;
         DisableCanvasGroup(contactsPanel);
         EnableCanvasGroup(chatsPanel);
         DisableCanvasGroup(settingsPanel);
@@ -29,6 +39,9 @@ public class AppManager : MonoBehaviour
 
     public void OnSettingsButtonClicked()
     {
+        imageButtonContacts.enabled = false;
+        imageButtonChats.enabled = false;
+        imageButtonSettings.enabled = true;
         DisableCanvasGroup(contactsPanel);
         DisableCanvasGroup(chatsPanel);
         EnableCanvasGroup(settingsPanel);
