@@ -423,6 +423,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   thisChannelId: 
+  thisRoomName: 
   IsActive: 0
   textDisplayName: {fileID: 6528170438652192236}
   backgroundImage: {fileID: 3039752005067536576}
