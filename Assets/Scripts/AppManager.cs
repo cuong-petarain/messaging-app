@@ -8,9 +8,9 @@ public class AppManager : MonoBehaviour
     [SerializeField] private CanvasGroup contactsPanel;
     [SerializeField] private CanvasGroup chatsPanel;
     [SerializeField] private CanvasGroup settingsPanel;
-    [SerializeField] private Image imageButtonContacts;
-    [SerializeField] private Image imageButtonChats;
-    [SerializeField] private Image imageButtonSettings;
+    [SerializeField] private FunctionButton buttonContacts;
+    [SerializeField] private FunctionButton buttonChats;
+    [SerializeField] private FunctionButton buttonSettings;
 
     private void Awake()
     {
@@ -19,9 +19,9 @@ public class AppManager : MonoBehaviour
 
     public void OnContactsButtonClicked()
     {
-        imageButtonContacts.enabled = true;
-        imageButtonChats.enabled = false;
-        imageButtonSettings.enabled = false;
+        buttonContacts.ToggleActivation(true);
+        buttonChats.ToggleActivation(false);
+        buttonSettings.ToggleActivation(false);
         EnableCanvasGroup(contactsPanel);
         DisableCanvasGroup(chatsPanel);
         DisableCanvasGroup(settingsPanel);
@@ -29,9 +29,9 @@ public class AppManager : MonoBehaviour
 
     public void OnChatsButtonClicked()
     {
-        imageButtonContacts.enabled = false;;
-        imageButtonChats.enabled = true;
-        imageButtonSettings.enabled = false;
+        buttonContacts.ToggleActivation(false);
+        buttonChats.ToggleActivation(true);
+        buttonSettings.ToggleActivation(false);
         DisableCanvasGroup(contactsPanel);
         EnableCanvasGroup(chatsPanel);
         DisableCanvasGroup(settingsPanel);
@@ -39,9 +39,9 @@ public class AppManager : MonoBehaviour
 
     public void OnSettingsButtonClicked()
     {
-        imageButtonContacts.enabled = false;
-        imageButtonChats.enabled = false;
-        imageButtonSettings.enabled = true;
+        buttonContacts.ToggleActivation(false);
+        buttonChats.ToggleActivation(false);
+        buttonSettings.ToggleActivation(true);
         DisableCanvasGroup(contactsPanel);
         DisableCanvasGroup(chatsPanel);
         EnableCanvasGroup(settingsPanel);

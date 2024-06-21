@@ -30,7 +30,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     [Header("Prefabs")]
     [SerializeField] private MessageCard _messageCardPrefab;
-    [SerializeField] private Sprite[] _defaultSprites = new Sprite[7];
+    [SerializeField] private Sprite _defaultSprite;
 
     private string _nextCursor;
     private ScrollRect _messagesScrollRect;
@@ -48,7 +48,7 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         thisRoomName = roomName;
         textDisplayName.text = userDisplayName;
         textDisplayName.color = Color.black;
-        avatarImage.sprite = _defaultSprites[UnityEngine.Random.Range(0, _defaultSprites.Length)];
+        avatarImage.sprite = _defaultSprite;
 
         representMessagingComponents = messagingComponents;
         messagingComponents.transform.Find("Text_NameChat").GetComponent<TMP_Text>().text = userDisplayName;
