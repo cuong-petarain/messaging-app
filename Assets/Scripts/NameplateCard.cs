@@ -30,7 +30,6 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
 
     [Header("Prefabs")]
     [SerializeField] private MessageCard _messageCardPrefab;
-    [SerializeField] private Sprite _defaultSprite;
 
     private string _nextCursor;
     private ScrollRect _messagesScrollRect;
@@ -47,8 +46,6 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         thisChannelId = channelId;
         thisRoomName = roomName;
         textDisplayName.text = userDisplayName;
-        textDisplayName.color = Color.black;
-        avatarImage.sprite = _defaultSprite;
 
         representMessagingComponents = messagingComponents;
         messagingComponents.transform.Find("Text_NameChat").GetComponent<TMP_Text>().text = userDisplayName;
@@ -72,7 +69,6 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     public void ToggleComponents(bool toggle)
     {
         IsActive = toggle;
-        textDisplayName.color = toggle ? Color.black : Color.white;
         representMessagingComponents.SetActive(toggle);
         backgroundImage.color = toggle ? _pointerClickColor : Color.white;
         backgroundImage.enabled = toggle;

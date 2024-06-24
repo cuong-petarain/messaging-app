@@ -9,7 +9,6 @@ public class UserStatusCard : MonoBehaviour
     [SerializeField] private TMP_Text _textName;
     [SerializeField] private TMP_Text _textOnlineStatus;
     [SerializeField] private Image _imageAvatar;
-    [SerializeField] private Sprite _defaultSprite;
 
     private string _userId;
     private string _userName;
@@ -21,7 +20,6 @@ public class UserStatusCard : MonoBehaviour
         _textName.text = displayName;
         _textOnlineStatus.text = isOnline ? "online" : "offline";
         _textOnlineStatus.color = isOnline ? Color.green : Color.gray;
-        _imageAvatar.sprite = _defaultSprite;
     }
 
     public void OnCardClicked()
