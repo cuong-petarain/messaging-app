@@ -11,9 +11,9 @@ public class MessageInputField : MonoBehaviour
     [SerializeField] private Button _submitButton;
     private TMP_InputField _inputField;
 
-    private int lineCharacterLimit = 50;
-    private int heightBase = 60;
-    private int increaseHeightStep = 40;
+    private int lineCharacterLimit = 45;
+    private int heightBase = 70;
+    private int increaseHeightStep = 45;
     private int lineAdded = 0;
 
     private void Start()

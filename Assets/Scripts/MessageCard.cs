@@ -18,10 +18,13 @@ public class MessageCard : MonoBehaviour
 
     public DateTime createDateTime;
 
+    private int _characterLimit = 60;
+    private int _heightIncrease = 40;
+
     public void Populate(string displayName, string messageContent, DateTime createTime, bool isThisUser = false)
     {
         //_textDisplayName.text = displayName + ":";  // commented because conversations between 2 don't need names
-        _textMessageContent.text = InsertEveryXChars(messageContent, "<br>", 80);
+        _textMessageContent.text = InsertEveryXChars(messageContent, "<br>", _characterLimit);
         createDateTime = createTime;
         _textSentTime.text = $"{createTime.ToShortTimeString()}";
         if (isThisUser)
@@ -40,6 +43,7 @@ public class MessageCard : MonoBehaviour
 
     public void PopulateDateGroup(DateTime createTime)
     {
+        _textMessageContent.color = Color.white;
         _textMessageContent.text = createTime.ToString("MMMM d, yyyy");
         _textMessageContent.fontSize += 2;
         _textSentTime.gameObject.SetActive(false);
@@ -67,7 +71,7 @@ public class MessageCard : MonoBehaviour
                 modifiedString.Append(insertion);
 
                 Vector2 sizeDelta = transform.GetComponent<RectTransform>().sizeDelta;
-                sizeDelta.y += 30;
+                sizeDelta.y += _heightIncrease;
                 transform.GetComponent<RectTransform>().sizeDelta = sizeDelta;
             }
         }

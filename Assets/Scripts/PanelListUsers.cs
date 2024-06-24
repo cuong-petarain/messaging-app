@@ -29,7 +29,7 @@ public class PanelListUsers : MonoBehaviour
             await Task.Yield();
         }
         ids.Remove(_clientObject.ThisUser.Id);
-        InvokeRepeating(nameof(RefreshListUsers), 1, 5);
+        InvokeRepeating(nameof(RefreshListUsers), 1, 10);
     }
 
     private async void RefreshListUsers()

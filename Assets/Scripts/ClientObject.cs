@@ -62,7 +62,7 @@ public class ClientObject : MonoBehaviour
         // session
         deviceId = Application.companyName + Application.productName;
         session = await client.AuthenticateDeviceAsync(deviceId);
-
+ 
         // socket
         bool appearOnline = true;
         int connectionTimeout = 30;
