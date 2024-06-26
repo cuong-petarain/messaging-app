@@ -5,34 +5,12 @@ using Nakama;
 using System;
 using System.Threading.Tasks;
 
-public class ClientObject : MonoBehaviour
+public class ClientObject : PersistentSingleton<ClientObject>
 {
     private const string SessionPrefName = "nakama.session";
     private const string SingletonName = "ClientObject";
 
     private static readonly object Lock = new object();
-    private static ClientObject _instance;
-
-    public static ClientObject Instance
-    {
-        get
-        {
-            lock (Lock)
-            {
-                if (_instance != null)
-                    return _instance;
-                var go = GameObject.Find(SingletonName) ?? new GameObject(SingletonName);
-
-                if (go.GetComponent<ClientObject>() == null)
-                {
-                    go.AddComponent<ClientObject>();
-                }
-                DontDestroyOnLoad(go);
-                _instance = go.GetComponent<ClientObject>();
-                return _instance;
-            }
-        }
-    }
 
     public IClient Client { get; }
     public ISocket Socket { get; }
@@ -80,6 +58,7 @@ public class ClientObject : MonoBehaviour
             if (Session.AuthToken != null)
             {
                 PlayerPrefs.SetString(SessionPrefName, Session.AuthToken);
+                await Socket.ConnectAsync(Session);
                 return await Task.FromResult(true);
             }
             else
@@ -89,6 +68,7 @@ public class ClientObject : MonoBehaviour
         }
         else
         {
+            await Socket.ConnectAsync(Session);
             return await Task.FromResult(true);
         }
         
