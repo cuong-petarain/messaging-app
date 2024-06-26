@@ -16,7 +16,6 @@ public class UserAccount : MonoBehaviour
     [SerializeField] TMP_Text textButtonUpdate;
 
     private bool isInEditMode = false;
-    public static Action<string, string> OnUpdateAccountInfoButtonPressed;
 
     private async void Start()
     {
@@ -52,7 +51,7 @@ public class UserAccount : MonoBehaviour
             textDisplayName.gameObject.SetActive(true);
             inputName.gameObject.SetActive(false);
             textButtonUpdate.text = "Edit";
-            OnUpdateAccountInfoButtonPressed?.Invoke(textUsername.text, inputName.text.Trim());
+            ClientObject.Instance.UpdateAccountInfo(textUsername.text, inputName.text.Trim());
         }
     }
 }

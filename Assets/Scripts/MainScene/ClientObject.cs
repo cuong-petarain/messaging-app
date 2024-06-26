@@ -7,84 +7,102 @@ using System.Threading.Tasks;
 
 public class ClientObject : MonoBehaviour
 {
-    public PanelMessage panelMessage;
+    private const string SessionPrefName = "nakama.session";
+    private const string SingletonName = "ClientObject";
 
-    private static ClientObject instance;
-    public static ClientObject Instance => instance;
+    private static readonly object Lock = new object();
+    private static ClientObject _instance;
 
-    private const string SessionTokenKey = "nksession";
-    private const string UdidKey = "udid";
-    private string deviceId;
+    public static ClientObject Instance
+    {
+        get
+        {
+            lock (Lock)
+            {
+                if (_instance != null)
+                    return _instance;
+                var go = GameObject.Find(SingletonName) ?? new GameObject(SingletonName);
 
+                if (go.GetComponent<ClientObject>() == null)
+                {
+                    go.AddComponent<ClientObject>();
+                }
+                DontDestroyOnLoad(go);
+                _instance = go.GetComponent<ClientObject>();
+                return _instance;
+            }
+        }
+    }
 
-    private IClient client;
-    public IClient Client => client;
-    private ISocket socket;
-    public ISocket Socket => socket;
-    private ISession session;
-    public ISession Session => session;
+    public IClient Client { get; }
+    public ISocket Socket { get; }
+    public ISession Session { get; private set; }
     public IApiUser ThisUser { get; private set; }
 
     public static Action<IApiAccount> OnClientConnected;
 
-    private void Awake()
+    private ClientObject()
     {
-        if (instance == null)
-            instance = this;
+        Client = new Client("http", "127.0.0.1", 7350, "defaultkey")
+        {
+            Timeout = 20,
+#if UNITY_EDITOR
+            Logger = new UnityLogger()
+#endif
+        };
+        Socket = Client.NewSocket();
     }
 
-    private void OnEnable()
+    private Task<ISession> AuthentqweicateAsync(string email, string password)
     {
-        UserAccount.OnUpdateAccountInfoButtonPressed += UpdateAccountInfo;
+        // Modify to fit the authentication strategy you want within your game.
+        // EXAMPLE:
+        const string deviceIdPrefName = "deviceid";
+        var deviceId = PlayerPrefs.GetString(deviceIdPrefName, SystemInfo.deviceUniqueIdentifier);
+#if UNITY_EDITOR
+        Debug.LogFormat("Device id: {0}", deviceId);
+#endif
+        // With device IDs save it locally in case of OS updates which can change the value on device.
+        PlayerPrefs.SetString(deviceIdPrefName, deviceId);
+        return Client.AuthenticateDeviceAsync(deviceId);
     }
 
-    private void OnDisable()
+    public async Task<bool> AuthenticateAsync(string email, string password, bool isRegister)
     {
-        UserAccount.OnUpdateAccountInfoButtonPressed -= UpdateAccountInfo;
-        socket.ReceivedNotification -= panelMessage.HandleNotification;
-        socket.ReceivedChannelMessage -= panelMessage.HandleIncomingMessages;
-    }
+        // Restore session or create a new one.
+        var authToken = PlayerPrefs.GetString(SessionPrefName);
+        var session = Nakama.Session.Restore(authToken);
+        var expiredDate = DateTime.UtcNow.AddDays(1);
 
-    // Start is called before the first frame update
-    private void Start()
-    {
-        Connect();
-    }
-
-    private async void Connect()
-    {
-        // client
-        client = new Client("http", "127.0.0.1", 7350, "defaultkey");
-        client.Timeout = 10;
-        var logger = new UnityLogger();
-        client.Logger = logger;
+        if (session == null || session.HasExpired(expiredDate))
+        {
+            Session = await Client.AuthenticateEmailAsync(email, password, email, isRegister);
+            if (Session.AuthToken != null)
+            {
+                PlayerPrefs.SetString(SessionPrefName, Session.AuthToken);
+                return await Task.FromResult(true);
+            }
+            else
+            {
+                return await Task.FromResult(false);
+            }
+        }
+        else
+        {
+            return await Task.FromResult(true);
+        }
         
-        // session
-        deviceId = Application.companyName + Application.productName;
-        session = await client.AuthenticateDeviceAsync(deviceId);
- 
-        // socket
-        bool appearOnline = true;
-        int connectionTimeout = 30;
-        socket = client.NewSocket();
-        socket.ReceivedNotification += panelMessage.HandleNotification;
-        socket.ReceivedChannelMessage += panelMessage.HandleIncomingMessages;
-
-        await socket.ConnectAsync(session, appearOnline, connectionTimeout);
     }
 
-    private async void UpdateAccountInfo(string username, string name)
+    private void OnApplicationQuit() => Socket?.CloseAsync();
+
+    public async void UpdateAccountInfo(string username, string name)
     {
-        await client.UpdateAccountAsync(session, username, name);
+        await Client.UpdateAccountAsync(Session, username, name);
     }
 
     public void SetUserInfo(IApiUser userInfo)
     {
         ThisUser = userInfo;
-    }
-
-    public async void Logout()
-    {
-        await client.SessionLogoutAsync(session);
     }
 }
