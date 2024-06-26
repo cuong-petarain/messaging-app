@@ -30,6 +30,9 @@ public class PanelMessage : MonoBehaviour
 
     private void OnEnable()
     {
+        ClientObject.Instance.Socket.ReceivedNotification += HandleNotification;
+        ClientObject.Instance.Socket.ReceivedChannelMessage += HandleIncomingMessages;
+
         OnSentInviteDirectMessage += InviteDirectMessage;
         OnMessageSubmitted += SendMessageToActiveChannel;
         OnNameplateCardClicked += ActivateChannel;
@@ -38,6 +41,9 @@ public class PanelMessage : MonoBehaviour
 
     private void OnDisable()
     {
+        ClientObject.Instance.Socket.ReceivedNotification -= HandleNotification;
+        ClientObject.Instance.Socket.ReceivedChannelMessage -= HandleIncomingMessages;
+
         OnSentInviteDirectMessage -= InviteDirectMessage;
         OnMessageSubmitted -= SendMessageToActiveChannel;
         OnNameplateCardClicked -= ActivateChannel;
