@@ -1,17 +1,26 @@
 using Nakama;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using System;
 using System.Threading.Tasks;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using Satori;
+using DG.Tweening;
 
 public class PanelSettings : MonoBehaviour
 {
-    [SerializeField] TMP_Text textDisplayName;
+    [SerializeField] private TMP_Text textDisplayName;
+    [SerializeField] private PanelProfile _panelProfile;
+
+    private void OnEnable()
+    {
+        PanelProfile.OnUserInfoChanged += UpdateSettings;
+    }
+
+    private void OnDisable()
+    {
+        PanelProfile.OnUserInfoChanged -= UpdateSettings;
+    }
 
     private async void Start()
     {
@@ -22,17 +31,35 @@ public class PanelSettings : MonoBehaviour
         IApiAccount account = await ClientObject.Instance.Client.GetAccountAsync(ClientObject.Instance.Session);
         ClientObject.Instance.SetUserInfo(account.User);
         GetUserProfile(account);
+        _panelProfile.GetComponent<RectTransform>().DOLocalMoveX(Screen.width, 0);
     }
 
     private void GetUserProfile(IApiAccount accountInfo)
     {
         textDisplayName.text = accountInfo.User.DisplayName;
+        _panelProfile.Populate(accountInfo);
+    }
+
+    public void OnViewProfileClicked()
+    {
+        _panelProfile.gameObject.SetActive(true);
+        _panelProfile.GetComponent<RectTransform>().DOLocalMoveX(0, 0.25f);
+    }
+
+    public void OnBackFromProfileClicked()
+    {
+        _panelProfile.GetComponent<RectTransform>().DOLocalMoveX(Screen.width, 0.25f).OnComplete(() => _panelProfile.gameObject.SetActive(false));
     }
 
     public void OnLogoutButtonClicked()
     {
         ClientObject.Instance.Logout();
         StartCoroutine(ChangeScene("LandingScene"));
+    }
+
+    private void UpdateSettings(string displayName)
+    {
+        textDisplayName.text = displayName;
     }
 
     private IEnumerator ChangeScene(string sceneName)
