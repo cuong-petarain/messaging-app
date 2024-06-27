@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Nakama.TinyJson;
 using System;
+using DG.Tweening;
 
 public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
@@ -69,7 +70,16 @@ public class NameplateCard : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     public void ToggleComponents(bool toggle)
     {
         IsActive = toggle;
-        representMessagingComponents.SetActive(toggle);
+        float endXPos = toggle ? 0 : Screen.width;
+        if (toggle)
+        {
+            representMessagingComponents.SetActive(true);
+            representMessagingComponents.GetComponent<RectTransform>().DOLocalMoveX(endXPos, 0.25f);
+        }
+        else
+        {
+            representMessagingComponents.GetComponent<RectTransform>().DOLocalMoveX(endXPos, 0.25f).OnComplete(() => representMessagingComponents.SetActive(false));
+        }
         backgroundImage.color = toggle ? _pointerClickColor : Color.white;
         backgroundImage.enabled = toggle;
     }

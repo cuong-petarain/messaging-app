@@ -10,14 +10,13 @@ public class ClientObject : PersistentSingleton<ClientObject>
     private const string SessionPrefName = "nakama.session";
     private const string SingletonName = "ClientObject";
 
-    private static readonly object Lock = new object();
-
     public IClient Client { get; }
     public ISocket Socket { get; }
     public ISession Session { get; private set; }
     public IApiUser ThisUser { get; private set; }
 
-    public static Action<IApiAccount> OnClientConnected;
+    public Action<IApiNotification> OnReceivedNotification;
+    public Action<IApiChannelMessage> OnReceivedChannelMessage;
 
     private ClientObject()
     {
@@ -47,6 +46,8 @@ public class ClientObject : PersistentSingleton<ClientObject>
 
     public async Task<bool> AuthenticateAsync(string email, string password, bool isRegister)
     {
+        int atIndex = email.IndexOf("@");
+        string username = email.Substring(0, atIndex);
         // Restore session or create a new one.
         var authToken = PlayerPrefs.GetString(SessionPrefName);
         var session = Nakama.Session.Restore(authToken);
@@ -54,11 +55,13 @@ public class ClientObject : PersistentSingleton<ClientObject>
 
         if (session == null || session.HasExpired(expiredDate))
         {
-            Session = await Client.AuthenticateEmailAsync(email, password, email, isRegister);
+            Session = await Client.AuthenticateEmailAsync(email, password, username, isRegister);
             if (Session.AuthToken != null)
             {
                 PlayerPrefs.SetString(SessionPrefName, Session.AuthToken);
-                await Socket.ConnectAsync(Session);
+                Socket.ReceivedNotification += OnReceivedNotification;
+                Socket.ReceivedChannelMessage += OnReceivedChannelMessage;
+                await Socket.ConnectAsync(Session, true, 30);
                 return await Task.FromResult(true);
             }
             else
@@ -68,13 +71,20 @@ public class ClientObject : PersistentSingleton<ClientObject>
         }
         else
         {
-            await Socket.ConnectAsync(Session);
+            Socket.ReceivedNotification += OnReceivedNotification;
+            Socket.ReceivedChannelMessage += OnReceivedChannelMessage;
+            await Socket.ConnectAsync(Session, true, 30);
             return await Task.FromResult(true);
         }
         
     }
 
-    private void OnApplicationQuit() => Socket?.CloseAsync();
+    private void OnApplicationQuit()
+    {
+        Socket.ReceivedNotification -= OnReceivedNotification;
+        Socket.ReceivedChannelMessage -= OnReceivedChannelMessage;
+        Socket?.CloseAsync();
+    }
 
     public async void UpdateAccountInfo(string username, string name)
     {

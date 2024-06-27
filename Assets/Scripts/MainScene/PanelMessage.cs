@@ -4,11 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using TMPro;
 using UnityEngine;
 using Nakama.TinyJson;
 using PimDeWitte.UnityMainThreadDispatcher;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class PanelMessage : MonoBehaviour
 {
@@ -30,8 +30,8 @@ public class PanelMessage : MonoBehaviour
 
     private void OnEnable()
     {
-        ClientObject.Instance.Socket.ReceivedNotification += HandleNotification;
-        ClientObject.Instance.Socket.ReceivedChannelMessage += HandleIncomingMessages;
+        ClientObject.Instance.OnReceivedNotification += HandleNotification;
+        ClientObject.Instance.OnReceivedChannelMessage += HandleIncomingMessages;
 
         OnSentInviteDirectMessage += InviteDirectMessage;
         OnMessageSubmitted += SendMessageToActiveChannel;
@@ -41,8 +41,8 @@ public class PanelMessage : MonoBehaviour
 
     private void OnDisable()
     {
-        ClientObject.Instance.Socket.ReceivedNotification -= HandleNotification;
-        ClientObject.Instance.Socket.ReceivedChannelMessage -= HandleIncomingMessages;
+        ClientObject.Instance.OnReceivedNotification -= HandleNotification;
+        ClientObject.Instance.OnReceivedChannelMessage -= HandleIncomingMessages;
 
         OnSentInviteDirectMessage -= InviteDirectMessage;
         OnMessageSubmitted -= SendMessageToActiveChannel;
@@ -93,6 +93,7 @@ public class PanelMessage : MonoBehaviour
         string roomName = CheckIfRoomExist(ClientObject.Instance.ThisUser.Username, toUserName);
         if (string.IsNullOrEmpty(roomName))
         {
+            roomName = $"{ClientObject.Instance.ThisUser.Username}.{toUserName}";
             IChannel tmpChannel = await ClientObject.Instance.Socket.JoinChatAsync(toUserId, ChannelType.DirectMessage);  // to send notification to target user
             IChannel channel = await ClientObject.Instance.Socket.JoinChatAsync(roomName, ChannelType.Room, true, false);
             IApiUsers users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, new string[] { toUserId });
@@ -115,12 +116,16 @@ public class PanelMessage : MonoBehaviour
     {
         IApiUsers users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, new string[] { requestorUserId });
         string roomName = CheckIfRoomExist(users.Users.ToList()[0].Username, ClientObject.Instance.ThisUser.Username);
+        Debug.Log("AAAAA");
         if (string.IsNullOrEmpty(roomName))
         {
+            Debug.Log("BBBBB");
+            roomName = $"{users.Users.ToList()[0].Username}.{ClientObject.Instance.ThisUser.Username}";
             IChannel channel = await ClientObject.Instance.Socket.JoinChatAsync(roomName, ChannelType.Room, true, false);
             var usersList = users.Users.ToList();
             if (usersList.Count > 0)
             {
+                Debug.Log("CCCCC");
                 UnityMainThreadDispatcher.Instance().Enqueue(CreateChannel(channel.Id, channel.RoomName, usersList[0].DisplayName));
                 UnityMainThreadDispatcher.Instance().Enqueue(SaveChannelToDisk(channel.Id, channel.RoomName, usersList[0]));
             }
@@ -155,6 +160,8 @@ public class PanelMessage : MonoBehaviour
     {
         NameplateCard nameplate = Instantiate(_nameplateCardPrefab, _activeChatsPanel);
         GameObject messagingComponents = Instantiate(_messagingComponentsPrefab, transform);
+        float xPosition = Screen.width;
+        messagingComponents.GetComponent<RectTransform>().DOLocalMoveX(xPosition, 0);
         nameplate.Populate(channelId, roomName, toUserDisplayName, messagingComponents);
         _chattingChannels.Add(nameplate);
         yield return null;
@@ -203,6 +210,7 @@ public class PanelMessage : MonoBehaviour
 
     public void HandleNotification(IApiNotification notification)
     {
+        Debug.Log($"notifiation: {notification.Code}, {notification.Subject}");
         if (notification.Subject.Contains("wants to chat"))
         {
             AcceptDirectMessage(notification.SenderId);

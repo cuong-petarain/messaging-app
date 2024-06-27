@@ -392,8 +392,8 @@ MonoBehaviour:
   m_Padding:
     m_Left: 16
     m_Right: 32
-    m_Top: 0
-    m_Bottom: 0
+    m_Top: 16
+    m_Bottom: 16
   m_ChildAlignment: 3
   m_Spacing: 16
   m_ChildForceExpandWidth: 0
@@ -416,7 +416,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_HorizontalFit: 2
-  m_VerticalFit: 0
+  m_VerticalFit: 2
 --- !u!1 &7118085300495977398
 GameObject:
   m_ObjectHideFlags: 0

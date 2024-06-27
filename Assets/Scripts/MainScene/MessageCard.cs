@@ -70,9 +70,9 @@ public class MessageCard : MonoBehaviour
             {
                 modifiedString.Append(insertion);
 
-                Vector2 sizeDelta = transform.GetComponent<RectTransform>().sizeDelta;
-                sizeDelta.y += _heightIncrease;
-                transform.GetComponent<RectTransform>().sizeDelta = sizeDelta;
+                //Vector2 sizeDelta = transform.GetComponent<RectTransform>().sizeDelta;
+                //sizeDelta.y += _heightIncrease;
+                //transform.GetComponent<RectTransform>().sizeDelta = sizeDelta;
             }
         }
 
