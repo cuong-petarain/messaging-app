@@ -23,7 +23,7 @@ public class PanelMessage : MonoBehaviour
 
     private List<NameplateCard> _chattingChannels = new List<NameplateCard>();
     List<string> joinedChannels = new List<string>();
-    private readonly string HISTORY_CHANNELS_STRING = "HistoryChannels";
+    private string HISTORY_CHANNELS_STRING = "HistoryChannels";
 
     public static Action<string, string> OnSentInviteDirectMessage;
     public static Action<string, string, string> OnMessageSubmitted;
@@ -56,10 +56,11 @@ public class PanelMessage : MonoBehaviour
 
     private async void Start()
     {
-        while (ClientObject.Instance.Socket == null || !ClientObject.Instance.Socket.IsConnected)
+        while (ClientObject.Instance.Socket == null || !ClientObject.Instance.Socket.IsConnected || ClientObject.Instance.ThisUser == null)
         {
             await Task.Yield();
         }
+        HISTORY_CHANNELS_STRING += ClientObject.Instance.ThisUser.Username;
         LoadChannelsFromPlayerPrefs();
     }
 
@@ -154,6 +155,7 @@ public class PanelMessage : MonoBehaviour
 
     private List<string> GetChannels()
     {
+        Debug.LogWarning($"HISTORY CHANNELS: {HISTORY_CHANNELS_STRING}");
         string historyChannelsString = PlayerPrefs.GetString(HISTORY_CHANNELS_STRING, string.Empty);
         if (historyChannelsString != string.Empty)
         {
@@ -216,8 +218,11 @@ public class PanelMessage : MonoBehaviour
 
     private void SaveChannelsToDisk()
     {
-        string stringToSave = string.Join(";", joinedChannels);
-        PlayerPrefs.SetString(HISTORY_CHANNELS_STRING, stringToSave);
+        if (joinedChannels.Count > 0)
+        {
+            string stringToSave = string.Join(";", joinedChannels);
+            PlayerPrefs.SetString(HISTORY_CHANNELS_STRING, stringToSave);
+        }
     }
 
     private void SendMessageToActiveChannel(string channelId, string senderName, string message)
@@ -231,7 +236,6 @@ public class PanelMessage : MonoBehaviour
         if (notification.Subject.Contains("wants to chat"))
         {
             Dictionary<string, string> notiDetails = notification.Content.FromJson<Dictionary<string, string>>();
-            Debug.LogWarning($"Accept DM from {notiDetails.ElementAt(0).Value}");
             AcceptDirectMessage(notiDetails.ElementAt(0).Value);
         }
     }

@@ -10,12 +10,19 @@ public class ClientObject : PersistentSingleton<ClientObject>
     private const string SessionPrefName = "nakama.session";
     private const string SingletonName = "ClientObject";
 
-    public IClient Client { get; }
-    public ISocket Socket { get; }
+    public IClient Client { get; private set; }
+    public ISocket Socket { get; private set; }
     public ISession Session { get; private set; }
     public IApiUser ThisUser { get; private set; }
 
-    private ClientObject()
+    protected override void Awake()
+    {
+        base.Awake();
+
+        Init();
+    }
+
+    private void Init()
     {
         Client = new Client("http", "127.0.0.1", 7350, "defaultkey")
         {
@@ -30,12 +37,13 @@ public class ClientObject : PersistentSingleton<ClientObject>
     public async Task<bool> AuthenticateAsync(string email, string password, bool isRegister)
     {
         int atIndex = email.IndexOf("@");
-        string username = email.Substring(0, atIndex);
+        string username = email[..atIndex];
         // Restore session or create a new one.
         var authToken = PlayerPrefs.GetString(SessionPrefName);
         var session = Nakama.Session.Restore(authToken);
         var expiredDate = DateTime.UtcNow.AddDays(1);
 
+        Init();
         if (session == null || session.HasExpired(expiredDate))
         {
             Session = await Client.AuthenticateEmailAsync(email, password, username, isRegister);
@@ -58,7 +66,12 @@ public class ClientObject : PersistentSingleton<ClientObject>
         
     }
 
-
+    public async void Logout()
+    {
+        SetUserInfo(null);
+        await Socket.CloseAsync();
+        await Client.SessionLogoutAsync(Session);
+    }
 
     private void OnApplicationQuit()
     {

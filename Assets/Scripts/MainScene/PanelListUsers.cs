@@ -14,7 +14,9 @@ public class PanelListUsers : MonoBehaviour
     private List<string> ids = new List<string>()
     {
         "263178e6-f3f3-4fba-9277-c64d52579905",
-        "30b9fec2-b9b6-4e4c-b483-347727078a4a"
+        "30b9fec2-b9b6-4e4c-b483-347727078a4a",
+        "e380eaa5-7bac-4283-9dbe-c5852d3fb31a",
+        "0a44d1e6-dadc-40a0-a53f-ab72f71d4495"
     };
 
     private async void Start()

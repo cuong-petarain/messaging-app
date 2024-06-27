@@ -6,8 +6,10 @@ using TMPro;
 using System;
 using System.Threading.Tasks;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using Satori;
 
-public class UserAccount : MonoBehaviour
+public class PanelSettings : MonoBehaviour
 {
     [SerializeField] TMP_Text textDisplayName;
 
@@ -25,5 +27,17 @@ public class UserAccount : MonoBehaviour
     private void GetUserProfile(IApiAccount accountInfo)
     {
         textDisplayName.text = accountInfo.User.DisplayName;
+    }
+
+    public void OnLogoutButtonClicked()
+    {
+        ClientObject.Instance.Logout();
+        StartCoroutine(ChangeScene("LandingScene"));
+    }
+
+    private IEnumerator ChangeScene(string sceneName)
+    {
+        yield return new WaitForSeconds(0.2f);
+        SceneManager.LoadSceneAsync(sceneName);
     }
 }
