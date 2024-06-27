@@ -11,8 +11,6 @@ public class UserAccount : MonoBehaviour
 {
     [SerializeField] TMP_Text textDisplayName;
 
-    private bool isInEditMode = false;
-
     private async void Start()
     {
         while (ClientObject.Instance.Socket == null || !ClientObject.Instance.Socket.IsConnected)

@@ -50,7 +50,7 @@ public class PanelRegister : MonoBehaviour
                 StartCoroutine(ChangeScene(MAIN_SCENE_NAME));
             }
         }
-        catch (ApiResponseException ex)
+        catch
         {
             SetErrorMessage(EXISTED_EMAIL);
         }

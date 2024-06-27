@@ -19,7 +19,6 @@ public class MessageCard : MonoBehaviour
     public DateTime createDateTime;
 
     private int _characterLimit = 60;
-    private int _heightIncrease = 40;
 
     public void Populate(string displayName, string messageContent, DateTime createTime, bool isThisUser = false)
     {
@@ -69,10 +68,6 @@ public class MessageCard : MonoBehaviour
             if ((i + 1) % interval == 0 && i != original.Length - 1)
             {
                 modifiedString.Append(insertion);
-
-                //Vector2 sizeDelta = transform.GetComponent<RectTransform>().sizeDelta;
-                //sizeDelta.y += _heightIncrease;
-                //transform.GetComponent<RectTransform>().sizeDelta = sizeDelta;
             }
         }
 

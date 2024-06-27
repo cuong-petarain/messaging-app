@@ -9,6 +9,7 @@ using Nakama.TinyJson;
 using PimDeWitte.UnityMainThreadDispatcher;
 using UnityEngine.UI;
 using DG.Tweening;
+using System.Text;
 
 public class PanelMessage : MonoBehaviour
 {
@@ -21,6 +22,7 @@ public class PanelMessage : MonoBehaviour
     [SerializeField] private GameObject _messagingComponentsPrefab;
 
     private List<NameplateCard> _chattingChannels = new List<NameplateCard>();
+    List<string> joinedChannels = new List<string>();
     private readonly string HISTORY_CHANNELS_STRING = "HistoryChannels";
 
     public static Action<string, string> OnSentInviteDirectMessage;
@@ -30,8 +32,8 @@ public class PanelMessage : MonoBehaviour
 
     private void OnEnable()
     {
-        ClientObject.Instance.OnReceivedNotification += HandleNotification;
-        ClientObject.Instance.OnReceivedChannelMessage += HandleIncomingMessages;
+        ClientObject.Instance.Socket.ReceivedNotification += HandleNotification;
+        ClientObject.Instance.Socket.ReceivedChannelMessage += HandleIncomingMessages;
 
         OnSentInviteDirectMessage += InviteDirectMessage;
         OnMessageSubmitted += SendMessageToActiveChannel;
@@ -41,13 +43,15 @@ public class PanelMessage : MonoBehaviour
 
     private void OnDisable()
     {
-        ClientObject.Instance.OnReceivedNotification -= HandleNotification;
-        ClientObject.Instance.OnReceivedChannelMessage -= HandleIncomingMessages;
+        ClientObject.Instance.Socket.ReceivedNotification -= HandleNotification;
+        ClientObject.Instance.Socket.ReceivedChannelMessage -= HandleIncomingMessages;
 
         OnSentInviteDirectMessage -= InviteDirectMessage;
         OnMessageSubmitted -= SendMessageToActiveChannel;
         OnNameplateCardClicked -= ActivateChannel;
         OnNameplateCardRemoved -= DeleteCardAndActivateNextOne;
+
+        SaveChannelsToDisk();
     }
 
     private async void Start()
@@ -61,11 +65,11 @@ public class PanelMessage : MonoBehaviour
 
     private async void LoadChannelsFromPlayerPrefs()
     {
-        string[] historyChannels = GetChannels();
-        if (historyChannels == null)
+        joinedChannels = GetChannels();
+        if (joinedChannels.Count == 0)
             return;
 
-        foreach (string channel in historyChannels)
+        foreach (string channel in joinedChannels)
         {
             if (!string.IsNullOrEmpty(channel))
             {
@@ -74,17 +78,6 @@ public class PanelMessage : MonoBehaviour
                 StartCoroutine(CreateChannel(channelDetails[0], channelDetails[1], channelDetails[2]));
             }
         }
-    }
-
-    private string[] GetChannels()
-    {
-        string historyChannelsString = PlayerPrefs.GetString(HISTORY_CHANNELS_STRING, string.Empty);
-        if (historyChannelsString != string.Empty)
-        {
-            var channelIds = historyChannelsString.Split(';');
-            return channelIds;
-        }
-        return null;
     }
 
     private async void InviteDirectMessage(string toUserId, string toUserName)
@@ -102,7 +95,7 @@ public class PanelMessage : MonoBehaviour
             if (usersList.Count > 0)
             {
                 StartCoroutine(CreateChannel(channel.Id, channel.RoomName, usersList[0].DisplayName));
-                StartCoroutine(SaveChannelToDisk(channel.Id, channel.RoomName, usersList[0]));
+                AddChannelToJoined(channel.Id, channel.RoomName, usersList[0].DisplayName);
             }
             await ClientObject.Instance.Socket.LeaveChatAsync(tmpChannel.Id);  // leave DirectMessage channel
         }
@@ -112,37 +105,40 @@ public class PanelMessage : MonoBehaviour
         }
     }
 
-    private async void AcceptDirectMessage(string requestorUserId)
+    private async void AcceptDirectMessage(string requestorUsername)
     {
-        IApiUsers users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, new string[] { requestorUserId });
-        string roomName = CheckIfRoomExist(users.Users.ToList()[0].Username, ClientObject.Instance.ThisUser.Username);
-        Debug.Log("AAAAA");
-        if (string.IsNullOrEmpty(roomName))
+        try
         {
-            Debug.Log("BBBBB");
-            roomName = $"{users.Users.ToList()[0].Username}.{ClientObject.Instance.ThisUser.Username}";
-            IChannel channel = await ClientObject.Instance.Socket.JoinChatAsync(roomName, ChannelType.Room, true, false);
-            var usersList = users.Users.ToList();
-            if (usersList.Count > 0)
+            string roomName = CheckIfRoomExist(requestorUsername, ClientObject.Instance.ThisUser.Username);
+            if (string.IsNullOrEmpty(roomName))
             {
-                Debug.Log("CCCCC");
-                UnityMainThreadDispatcher.Instance().Enqueue(CreateChannel(channel.Id, channel.RoomName, usersList[0].DisplayName));
-                UnityMainThreadDispatcher.Instance().Enqueue(SaveChannelToDisk(channel.Id, channel.RoomName, usersList[0]));
+                roomName = $"{requestorUsername}.{ClientObject.Instance.ThisUser.Username}";
+                IChannel channel = await ClientObject.Instance.Socket.JoinChatAsync(roomName, ChannelType.Room, true, false);
+                IApiUsers users = await ClientObject.Instance.Client.GetUsersAsync(ClientObject.Instance.Session, null, new string[] { requestorUsername });
+                var usersList = users.Users.ToList();
+                if (usersList.Count > 0)
+                {
+                    UnityMainThreadDispatcher.Instance().Enqueue(CreateChannel(channel.Id, channel.RoomName, usersList[0].DisplayName));
+                    AddChannelToJoined(channel.Id, channel.RoomName, usersList[0].DisplayName);
+                }
+            }
+            else
+            {
+                ActivateChannel(roomName);
             }
         }
-        else
+        catch (Exception ex)
         {
-            ActivateChannel(roomName);
+            Debug.LogError(ex.Message);
         }
     }
 
     private string CheckIfRoomExist(string usernameOne, string usernameTwo)
     {
-        string[] historyChannels = GetChannels();
-        if (historyChannels == null)
+        if (joinedChannels == null)
             return "";
 
-        foreach (string channel in historyChannels)
+        foreach (string channel in joinedChannels)
         {
             if (!string.IsNullOrEmpty(channel))
             {
@@ -154,6 +150,17 @@ public class PanelMessage : MonoBehaviour
             }
         }
         return "";
+    }    
+
+    private List<string> GetChannels()
+    {
+        string historyChannelsString = PlayerPrefs.GetString(HISTORY_CHANNELS_STRING, string.Empty);
+        if (historyChannelsString != string.Empty)
+        {
+            var channelIds = historyChannelsString.Split(';');
+            return channelIds.ToList();
+        }
+        return new List<string>();
     }
 
     private IEnumerator CreateChannel(string channelId, string roomName, string toUserDisplayName)
@@ -182,24 +189,35 @@ public class PanelMessage : MonoBehaviour
         }
     }
 
-    private IEnumerator SaveChannelToDisk(string toSaveChannelId, string roomName, IApiUser user)
+    private void AddChannelToJoined(string toSaveChannelId, string roomName, string toUserDisplayName)
     {
-        string historyChannelsString = PlayerPrefs.GetString(HISTORY_CHANNELS_STRING, string.Empty);
-        if (historyChannelsString != string.Empty)
+        string toAdd;
+        if (joinedChannels.Count == 0)
         {
-            var channelIds = historyChannelsString.Split(';');
-            if (channelIds.FirstOrDefault(c => c == toSaveChannelId) == null)
-            {
-                historyChannelsString += $";{toSaveChannelId},{roomName},{user.DisplayName}";
-                PlayerPrefs.SetString(HISTORY_CHANNELS_STRING, historyChannelsString);
-            }
+            toAdd = $"{toSaveChannelId},{roomName},{toUserDisplayName}";
         }
         else
         {
-            historyChannelsString += $"{toSaveChannelId},{roomName},{user.DisplayName}";
-            PlayerPrefs.SetString(HISTORY_CHANNELS_STRING, historyChannelsString);
+            toAdd = $";{toSaveChannelId},{roomName},{toUserDisplayName}";
         }
-        yield return null;
+        joinedChannels.Add(toAdd);
+    }
+
+    private void RemoveChannelFromJoined(string toRemoveChannelId)
+    {
+        int indexToRemove = -1;
+        for (int i = 0; i < joinedChannels.Count; i++)
+        {
+            if (joinedChannels[i].Contains(toRemoveChannelId))
+                indexToRemove = i;
+        }
+        joinedChannels.RemoveAt(indexToRemove);
+    }
+
+    private void SaveChannelsToDisk()
+    {
+        string stringToSave = string.Join(";", joinedChannels);
+        PlayerPrefs.SetString(HISTORY_CHANNELS_STRING, stringToSave);
     }
 
     private void SendMessageToActiveChannel(string channelId, string senderName, string message)
@@ -210,10 +228,11 @@ public class PanelMessage : MonoBehaviour
 
     public void HandleNotification(IApiNotification notification)
     {
-        Debug.Log($"notifiation: {notification.Code}, {notification.Subject}");
         if (notification.Subject.Contains("wants to chat"))
         {
-            AcceptDirectMessage(notification.SenderId);
+            Dictionary<string, string> notiDetails = notification.Content.FromJson<Dictionary<string, string>>();
+            Debug.LogWarning($"Accept DM from {notiDetails.ElementAt(0).Value}");
+            AcceptDirectMessage(notiDetails.ElementAt(0).Value);
         }
     }
 
@@ -253,56 +272,6 @@ public class PanelMessage : MonoBehaviour
             if (_chattingChannels.Count > 0)
                 ActivateChannel(_chattingChannels[0].thisRoomName);
         }
-        RemoveChannelFromDisk(cardToRemove.thisChannelId);
-    }
-
-    private void RemoveChannelFromDisk(string toRemoveChannelId)
-    {
-        string historyChannelsString = PlayerPrefs.GetString(HISTORY_CHANNELS_STRING, string.Empty);
-        if (historyChannelsString != string.Empty)
-        {
-            var channelIds = historyChannelsString.Split(';');
-            int indexToRemove = 0;
-            for (int i = 0; i < channelIds.Length; i++)
-            {
-                if (channelIds[i].Contains(toRemoveChannelId))
-                {
-                    indexToRemove = i;
-                    break;
-                }
-            }
-            string[] newArray = RemoveElement(channelIds, channelIds[indexToRemove]);
-            string newHistoryChanningString = ConvertArrayToString(newArray, ';');
-            PlayerPrefs.SetString(HISTORY_CHANNELS_STRING, newHistoryChanningString);
-        }
-    }
-
-    string[] RemoveElement(string[] originalArray, string elementToRemove)
-    {
-        int index = System.Array.IndexOf(originalArray, elementToRemove);
-
-        if (index < 0)
-        {
-            // Element not found
-            return originalArray;
-        }
-
-        string[] newArray = new string[originalArray.Length - 1];
-
-        for (int i = 0, j = 0; i < originalArray.Length; i++)
-        {
-            if (i == index)
-            {
-                continue;
-            }
-            newArray[j++] = originalArray[i];
-        }
-
-        return newArray;
-    }
-
-    string ConvertArrayToString(string[] array, char separator)
-    {
-        return string.Join(separator.ToString(), array);
+        RemoveChannelFromJoined(cardToRemove.thisChannelId);
     }
 }
