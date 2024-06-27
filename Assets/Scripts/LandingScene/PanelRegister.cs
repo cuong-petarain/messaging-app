@@ -47,13 +47,21 @@ public class PanelRegister : MonoBehaviour
             bool connectSuccessfully = await ClientObject.Instance.AuthenticateAsync(_inputEmail.text, _inputPassword.text, true);
             if (connectSuccessfully)
             {
+                SetDisplayName(_inputEmail.text);
                 StartCoroutine(ChangeScene(MAIN_SCENE_NAME));
             }
         }
-        catch (ApiResponseException ex)
+        catch
         {
             SetErrorMessage(EXISTED_EMAIL);
         }
+    }
+
+    private async void SetDisplayName(string email)
+    {
+        int atIndex = email.IndexOf("@");
+        string username = email[..atIndex];
+        await ClientObject.Instance.Client.UpdateAccountAsync(ClientObject.Instance.Session, username, username);
     }
 
     private IEnumerator ChangeScene(string sceneName)

@@ -14,7 +14,7 @@ public class AppManager : MonoBehaviour
 
     private void Awake()
     {
-        OnContactsButtonClicked();
+        OnChatsButtonClicked();
     }
 
     public void OnContactsButtonClicked()

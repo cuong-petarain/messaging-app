@@ -10,16 +10,19 @@ public class ClientObject : PersistentSingleton<ClientObject>
     private const string SessionPrefName = "nakama.session";
     private const string SingletonName = "ClientObject";
 
-    private static readonly object Lock = new object();
-
-    public IClient Client { get; }
-    public ISocket Socket { get; }
+    public IClient Client { get; private set; }
+    public ISocket Socket { get; private set; }
     public ISession Session { get; private set; }
     public IApiUser ThisUser { get; private set; }
 
-    public static Action<IApiAccount> OnClientConnected;
+    protected override void Awake()
+    {
+        base.Awake();
 
-    private ClientObject()
+        Init();
+    }
+
+    private void Init()
     {
         Client = new Client("http", "127.0.0.1", 7350, "defaultkey")
         {
@@ -31,34 +34,23 @@ public class ClientObject : PersistentSingleton<ClientObject>
         Socket = Client.NewSocket();
     }
 
-    private Task<ISession> AuthentqweicateAsync(string email, string password)
-    {
-        // Modify to fit the authentication strategy you want within your game.
-        // EXAMPLE:
-        const string deviceIdPrefName = "deviceid";
-        var deviceId = PlayerPrefs.GetString(deviceIdPrefName, SystemInfo.deviceUniqueIdentifier);
-#if UNITY_EDITOR
-        Debug.LogFormat("Device id: {0}", deviceId);
-#endif
-        // With device IDs save it locally in case of OS updates which can change the value on device.
-        PlayerPrefs.SetString(deviceIdPrefName, deviceId);
-        return Client.AuthenticateDeviceAsync(deviceId);
-    }
-
     public async Task<bool> AuthenticateAsync(string email, string password, bool isRegister)
     {
+        int atIndex = email.IndexOf("@");
+        string username = email[..atIndex];
         // Restore session or create a new one.
         var authToken = PlayerPrefs.GetString(SessionPrefName);
         var session = Nakama.Session.Restore(authToken);
         var expiredDate = DateTime.UtcNow.AddDays(1);
 
+        Init();
         if (session == null || session.HasExpired(expiredDate))
         {
-            Session = await Client.AuthenticateEmailAsync(email, password, email, isRegister);
+            Session = await Client.AuthenticateEmailAsync(email, password, username, isRegister);
             if (Session.AuthToken != null)
             {
                 PlayerPrefs.SetString(SessionPrefName, Session.AuthToken);
-                await Socket.ConnectAsync(Session);
+                await Socket.ConnectAsync(Session, true, 30);
                 return await Task.FromResult(true);
             }
             else
@@ -68,13 +60,23 @@ public class ClientObject : PersistentSingleton<ClientObject>
         }
         else
         {
-            await Socket.ConnectAsync(Session);
+            await Socket.ConnectAsync(Session, true, 30);
             return await Task.FromResult(true);
         }
         
     }
 
-    private void OnApplicationQuit() => Socket?.CloseAsync();
+    public async void Logout()
+    {
+        SetUserInfo(null);
+        await Socket.CloseAsync();
+        await Client.SessionLogoutAsync(Session);
+    }
+
+    private void OnApplicationQuit()
+    {
+        Socket?.CloseAsync();
+    }
 
     public async void UpdateAccountInfo(string username, string name)
     {
