@@ -155,7 +155,6 @@ public class PanelMessage : MonoBehaviour
 
     private List<string> GetChannels()
     {
-        Debug.LogWarning($"HISTORY CHANNELS: {HISTORY_CHANNELS_STRING}");
         string historyChannelsString = PlayerPrefs.GetString(HISTORY_CHANNELS_STRING, string.Empty);
         if (historyChannelsString != string.Empty)
         {

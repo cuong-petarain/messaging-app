@@ -1989,6 +1989,8 @@ MonoBehaviour:
   _textErrorMessage: {fileID: 665108760}
   _inputEmail: {fileID: 1897677804}
   _inputPassword: {fileID: 158890941}
+  _buttonLogin: {fileID: 1048291916}
+  _buttonGoToRegister: {fileID: 2127306310}
   _imageLoading: {fileID: 678485093}
   _normalColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 0.5882353}
   _erroredColor: {r: 1, g: 0, b: 0, a: 0.5882353}
@@ -3297,6 +3299,8 @@ MonoBehaviour:
   _inputEmail: {fileID: 241601072}
   _inputPassword: {fileID: 885053696}
   _inputConPassword: {fileID: 637828288}
+  _buttonRegister: {fileID: 1479008850}
+  _buttonGoToLogin: {fileID: 44957149}
   _imageLoading: {fileID: 678485093}
   _normalColor: {r: 0.5882353, g: 0.5882353, b: 0.5882353, a: 0.5882353}
   _erroredColor: {r: 1, g: 0, b: 0, a: 0.5882353}
@@ -7094,7 +7098,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcab37c2a3d26d14baf975d535ab1363, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AutomaticallyUnparentOnAwake: 1
+  AutoUnparentOnAwake: 1
 --- !u!4 &2143043620
 Transform:
   m_ObjectHideFlags: 0

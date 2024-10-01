@@ -14,6 +14,8 @@ public class PanelLogin : MonoBehaviour
     [SerializeField] private TMP_Text _textErrorMessage;
     [SerializeField] private TMP_InputField _inputEmail;
     [SerializeField] private TMP_InputField _inputPassword;
+    [SerializeField] private Button _buttonLogin;
+    [SerializeField] private Button _buttonGoToRegister;
     [SerializeField] private GameObject _imageLoading;
     [SerializeField] private Color _normalColor;
     [SerializeField] private Color _erroredColor;
@@ -53,6 +55,7 @@ public class PanelLogin : MonoBehaviour
 
     private bool CheckConditionsToLogin()
     {
+        ToggleButtons(false);
         ResetVisuals();
 
         if (!IsValidEmail(_inputEmail.text))
@@ -71,6 +74,12 @@ public class PanelLogin : MonoBehaviour
         SetErrorMessage(string.Empty);
     }
 
+    private void ToggleButtons(bool toggle)
+    {
+        _buttonLogin.interactable = toggle;
+        _buttonGoToRegister.interactable = toggle;
+    }
+
     private bool IsValidEmail(string email)
     {
         string pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
@@ -79,6 +88,7 @@ public class PanelLogin : MonoBehaviour
 
     private void SetErrorMessage(string message)
     {
+        ToggleButtons(true);
         _errorContainer.SetActive(!string.IsNullOrEmpty(message));
         _textErrorMessage.text = message;
     }

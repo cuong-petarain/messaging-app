@@ -19,6 +19,8 @@ public class PanelRegister : MonoBehaviour
     [SerializeField] private TMP_InputField _inputEmail;
     [SerializeField] private TMP_InputField _inputPassword;
     [SerializeField] private TMP_InputField _inputConPassword;
+    [SerializeField] private Button _buttonRegister;
+    [SerializeField] private Button _buttonGoToLogin;
     [SerializeField] private GameObject _imageLoading;
     [SerializeField] private Color _normalColor;
     [SerializeField] private Color _erroredColor;
@@ -73,6 +75,7 @@ public class PanelRegister : MonoBehaviour
 
     private bool CheckConditionsToRegister()
     {
+        ToggleButton(false);
         ResetVisuals();
 
         if (!IsValidEmail(_inputEmail.text))
@@ -104,6 +107,12 @@ public class PanelRegister : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void ToggleButton(bool toggle)
+    {
+        _buttonRegister.interactable = toggle;
+        _buttonGoToLogin.interactable = toggle;
     }
 
     private bool IsValidEmail(string email)
@@ -155,6 +164,7 @@ public class PanelRegister : MonoBehaviour
 
     private void SetErrorMessage(string message)
     {
+        ToggleButton(true);
         _errorContainer.SetActive(!string.IsNullOrEmpty(message));
         _textErrorMessage.text = message;
     }
